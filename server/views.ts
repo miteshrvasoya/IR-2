@@ -75,7 +75,7 @@ export function recordView(sim: Sim, role: RoleKind) {
 export interface AgentView {
   sessionId: string; caseTitle: string; phase: Phase; scene: string; turn: number;
   me: { seat: string; role: RoleKind; name: string; title: string; agentName: string; personality: string; background: string; style: string; traits: any; instructions: string };
-  character?: { id: string; name: string; occupation: string; persona: string; goals: string; isDefendant: boolean; pressure: number; sworn: boolean; knowledge: { factId: string; topic: string; text: string; stance: string; cover?: string; say?: string; firmness: number; yieldsTo: string[]; caught: boolean; revealed: boolean; denied: boolean }[] };
+  character?: { id: string; name: string; occupation: string; persona: string; goals: string; isDefendant: boolean; pressure: number; sworn: boolean; knowledge: { factId: string; topic: string; text: string; stance: string; cover?: string; say?: string; firmness: number; yieldsTo: string[]; caught: boolean; revealed: boolean; denied: boolean; testified: boolean }[] };
   purpose: string; instruction: string; context: any; options: ActionOption[];
   briefing: string; victim: any; standard: string;
   cast: { seat: string; name: string; role: RoleKind }[];
@@ -116,7 +116,7 @@ export function buildView(sim: Sim, turn: Turn, instruction: string, options: Ac
       id: c.id, name: c.name, occupation: c.occupation, persona: c.persona, goals: c.goals, isDefendant: st.defendant === c.id, pressure: Math.round(rtc.pressure * 10) / 10, sworn: !!rtc.sworn,
       knowledge: Object.values(sim.b.facts).filter((f) => f.knownBy[c.id]).map((f) => {
         const k = f.knownBy[c.id];
-        return { factId: f.id, topic: f.topic, text: f.text, stance: k.stance, cover: k.cover, say: k.say, firmness: k.firmness ?? 2, yieldsTo: (k.yieldsTo || []).map((y) => sim.b.evidence[y]?.title || sim.b.analyses[y]?.label || 'a witness account'), caught: rtc.caught.includes(f.id), revealed: rtc.revealed.includes(f.id), denied: rtc.denied.includes(f.id) };
+        return { factId: f.id, topic: f.topic, text: f.text, stance: k.stance, cover: k.cover, say: k.say, firmness: k.firmness ?? 2, yieldsTo: (k.yieldsTo || []).map((y) => sim.b.evidence[y]?.title || sim.b.analyses[y]?.label || 'a witness account'), caught: rtc.caught.includes(f.id), revealed: rtc.revealed.includes(f.id), denied: rtc.denied.includes(f.id), testified: st.trial.testimony.some((x) => x.fact === f.id && x.witness === c.id) };
       }),
     };
   }

@@ -142,7 +142,7 @@ export function heuristicDecide(v: AgentView): AgentDecision {
     case 'answer': return answer(v, r);
     case 'testify': {
       const c = v.context, ex = v.evidence.find((e) => e.id === c.exhibit) || v.evidence.find((e) => c.question.toLowerCase().includes(e.title.toLowerCase().slice(0, 14)));
-      const cross = /isn't|correct\?|right\?|cannot|could|possible|agree/i.test(c.question);
+      const cross = /isn't|is it not|correct\?|right\?|cannot|could|possible|agree/i.test(c.question);
       if (role === 'forensic') {
         if (ex) {
           const rep = ex.analyses.filter((a) => a.status === 'done').map((a) => a.report).join(' ');
@@ -279,7 +279,8 @@ function reportText(v: AgentView, ranks: Tally[]): string {
 function answer(v: AgentView, r: Rng): AgentDecision {
   const ch = v.character!, c = v.context, T = v.me.traits, q: string = c.question.toLowerCase();
   const me = ch.id, presented = c.presented ? v.evidence.find((e) => e.id === c.presented.id) : null;
-  const selfish = (k: typeof ch.knowledge[0]) => k.topic.startsWith(me + '.') || k.text.includes(surname(ch.name));
+  const selfish = (k: typeof ch.knowledge[0]) => k.topic.startsWith(me + '.') || (k.text.includes(surname(ch.name)) && !/\b(saw|heard|seen)\b/.test(k.text));
+  const said = (k: typeof ch.knowledge[0]) => (ch.sworn ? k.testified : k.revealed);
   const rel = (k: typeof ch.knowledge[0]) => {
     let s = 0;
     if (c.topic && (k.topic === c.topic || (c.topic === 'whereabouts' && k.topic.endsWith('.whereabouts') && k.topic.startsWith(me)))) s += 4;
@@ -295,18 +296,25 @@ function answer(v: AgentView, r: Rng): AgentDecision {
     if (/between you and|relationship|get on|quarrel|argu|terms/.test(q) && selfish(k) && !k.topic.endsWith('whereabouts')) s += 3;
     return s;
   };
-  const cand = ch.knowledge.map((k) => ({ k, s: rel(k) })).filter((x) => x.s >= 3).sort((a, b) => b.s - a.s).slice(0, 2);
+  let cand = ch.knowledge.map((k) => ({ k, s: rel(k) })).filter((x) => x.s >= 3).sort((a, b) => b.s - a.s);
+  const hadAny = cand.length > 0;
+  if (cand.some((x) => !said(x.k))) cand = cand.filter((x) => !said(x.k));          // do not repeat what is already on record
+  else if (hadAny && !presented) return { thought: 'I have already answered this.', action: { type: 'answer', text: pick(r, ['I have already told you what I know about that.', 'As I said before. I have nothing to add.', v.me.style === 'chatty' ? 'Like I said — and I would say it again — that is all of it.' : 'My answer is the same as it was.']), reveals: [], denies: [] } };
+  cand = cand.slice(0, 2);
+  if (!cand.length && /how certain|how sure|certain are you/.test(q)) return { thought: 'They are testing my confidence.', action: { type: 'answer', text: v.me.style === 'nervous' ? 'I — fairly sure. It was late. But yes, I think so.' : T.aggression > 0.6 ? 'I know what I saw, and I know what time it was.' : 'As sure as I can be. I was not looking at a clock every minute, but I know what I saw.', reveals: [], denies: [] } };
+  if (!cand.length && /changed your account|first version/.test(q)) return { thought: 'Credibility attack.', action: { type: 'answer', text: v.me.style === 'nervous' ? 'I was scared. I should have said it straight away. That does not make the rest untrue.' : 'I answered the questions I was asked at the time. I am answering yours now.', reveals: [], denies: [] } };
+  if (!cand.length && /where were you|your evening|whereabouts/.test(q) && ch.knowledge.every((k) => k.topic !== `${me}.whereabouts`)) return { thought: 'Nothing to hide about where I was.', action: { type: 'answer', text: `I was working. ${ch.occupation} — I was at my post the whole evening, and I did not set foot in the dome until it was all over.`, reveals: [], denies: [] } };
   const reveals: string[] = [], denies: string[] = [], parts: string[] = [];
   const firm = (k: any) => k.firmness ?? 2;
   const leadIn = (k: any) => v.me.style === 'nervous' ? pick(r, ['Okay. Okay — look.', 'All right, fine, I should have said.', 'I — yes. Sorry.']) : T.aggression > 0.6 ? pick(r, ['Fine. If it gets me out of this room.', 'Very well, since you insist.']) : k.stance === 'open' ? pick(r, ['Yes.', 'I can tell you that.', 'Certainly.', '']) : pick(r, ['All right. I will tell you.', 'Very well.', 'I had hoped not to get into this.']);
   for (const { k } of cand) {
     const shownYield = !!presented && k.yieldsTo.some((y) => y === presented.title || presented.analyses.some((a) => a.label === y && a.status === 'done'));
     let give: boolean;
-    if (k.revealed) give = true;
+    if (k.revealed || k.testified) give = true;
     else if (k.stance === 'open') give = true;
     else if (k.stance === 'guarded') give = ch.pressure >= firm(k) * 1.2 || shownYield || k.caught || (ch.sworn && T.rigor > 0.5);
     else give = (k.caught && ch.pressure >= firm(k) * 2.4) || (shownYield && ch.pressure >= firm(k) * 2);
-    if (give) { reveals.push(k.factId); parts.push(`${k.revealed ? '' : leadIn(k)} ${k.say || k.text}`.trim()); }
+    if (give) { reveals.push(k.factId); parts.push(`${k.revealed && r() < 0.6 ? '' : leadIn(k)} ${k.say || k.text}`.trim()); }
     else { denies.push(k.factId); parts.push(k.caught ? pick(r, [`I have told you what I know. ${k.cover}`, `You can show me whatever you like. ${k.cover}`, `I am not going to change my answer because a printout disagrees with me. ${k.cover}`]) : k.cover!); }
   }
   let text = parts.join(' ');
@@ -355,7 +363,7 @@ function examine(v: AgentView, r: Rng, ranks: Tally[]): AgentDecision {
   const c = v.context, d = v.record!, T = v.me.traits, pros = v.me.role === 'prosecutor', def = d.defendant!, w = c.witness, n = c.askedSoFar.length;
   const adm = d.exhibits.filter((e) => e.status === 'admitted');
   const out = (act: any, th: string): AgentDecision => ({ thought: th, action: act });
-  const asked = (frag: string) => c.askedSoFar.some((q: string) => q.includes(frag));
+  const asked = (frag: string) => c.askedSoFar.some((q: string) => q.toLowerCase().includes(frag.toLowerCase()));
   const alt = ranks.find((x) => x.id !== def && x.total >= 3);
   const helps = (p: any) => (pros ? p.suspect === def && !p.exculpatory : (p.suspect === def && p.exculpatory) || (alt && p.suspect === alt.id && !p.exculpatory));
   const hurts = (p: any) => (pros ? p.suspect === def && p.exculpatory : p.suspect === def && !p.exculpatory);
@@ -409,7 +417,7 @@ function deliberate(v: AgentView, r: Rng): AgentDecision {
       notes.push({ text: `the ${lc(e.title)} (${lc(strip(p.note))})`, w: p.exculpatory ? -w : w, id: e.id });
       if (!key.includes(e.id)) key.push(e.id);
     }
-    if (e.limitations.length && e.points.some((p) => p.suspect === def && !p.exculpatory)) doubts.push(`the ${lc(e.title)} — ${lc(e.limitations[0].text)}`);
+    if (e.limitations.length && e.points.some((p) => p.suspect === def && !p.exculpatory)) doubts.push(`the ${lc(e.title)} — ${lc(strip(e.limitations[0].text))}`);
   }
   for (const t of d.testimony) for (const p of t.points) if (p.suspect === def) {
     const w = W[p.strength] * (t.witnessImpeached ? 0.5 : 1) * (0.8 + 0.4 * T.empathy);
@@ -419,7 +427,7 @@ function deliberate(v: AgentView, r: Rng): AgentDecision {
   }
   const alt = d.argued?.defense?.alt, needMotive = d.charge === 'Murder';
   const score = Math.min(6, el.motive) + Math.min(6, el.opportunity) + Math.min(6, el.identity) - 1.5 * el.exculp;
-  const bar = 8 + 4.2 * T.skepticism + (alt ? 1.2 : 0);
+  const bar = 6.5 + 3.6 * T.skepticism + (alt ? 0.8 : 0);
   const gaps = [needMotive && el.motive < 2 ? 'motive' : '', el.opportunity < 2 ? 'opportunity' : '', el.identity < 2 ? 'anything tying the defendant to the act itself' : ''].filter(Boolean);
   let vote = score >= bar && !gaps.length ? 'guilty' : 'not_guilty';
   const prev = c.votesSoFar?.[me], others = Object.entries(c.votesSoFar || {}).filter(([k]) => k !== me).map(([, x]) => x as string);

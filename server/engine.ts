@@ -121,7 +121,7 @@ function setTheory(sim: Sim, seat: string, t: AgentDecision['theory']) {
   const suspect = t.suspect && sim.b.characters[t.suspect] ? t.suspect : null;
   const m = sim.memory(seat), prev = m.theory, evCount = evidenceFor(sim, seat).length + sim.st.investigatorFacts.length;
   m.theory = { suspect, confidence: Math.max(0, Math.min(1, Number(t.confidence) || 0)), summary: String(t.summary || '').slice(0, 400) };
-  if (prev && prev.suspect !== suspect) {
+  if (prev && prev.suspect && prev.suspect !== suspect) {
     m.theoryHistory.push({ seq: sim.st.seq, suspect, confidence: m.theory.confidence });
     sim.emit('theory', { seat, text: `${sim.nameOf(seat)} has revised their working theory.`, data: { from: prev.suspect, to: suspect, summary: m.theory.summary }, vis: 'sealed', aud: [seat], ms: 0 });
     sim.emit('theory_shift', { seat, text: `${sim.nameOf(seat)} revises their working theory.`, ms: 2200, highlight: 'theory' });

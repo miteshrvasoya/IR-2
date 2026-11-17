@@ -1,14 +1,18 @@
-// Sim: the in-memory working copy of one proceeding, always mirrored to its JSON files.
-// Nothing here decides anything; it holds state, emits events, and persists.
-import { rt, readJson, writeJson, appendEvents, readEvents } from './store.ts';
-import { getCase, type CaseBundle } from './caselib.ts';
+// Sim: the in-memory working copy of one proceeding. Pure and isomorphic: it holds state and emits
+// events; whoever runs it (the browser, or the recording script) decides where the JSON documents go.
+import type { CaseBundle } from './caselib.ts';
 import type { AgentProfile, EvidenceState, Market, Phase, PredictionEntry, SceneId, ScoreEntry, SessionState, SimEvent, RoleKind, SeatDef } from '../shared/types.ts';
 
 export interface Memory { notes: string[]; theory: { suspect: string | null; confidence: number; summary: string } | null; theoryHistory: { seq: number; suspect: string | null; confidence: number }[]; lastEvidenceCount: number }
 export interface Predictions { markets: Market[]; entries: PredictionEntry[]; sus: Record<string, string[]>; settled: boolean }
 
+/** The complete persisted form of a proceeding: one JSON document. */
+export interface SessionDoc {
+  format: 'interrogation-room/session@1'; state: SessionState; evidence: Record<string, EvidenceState>; scores: ScoreEntry[];
+  memory: Record<string, Memory>; predictions: Predictions; events: SimEvent[]; agents: Record<string, AgentProfile>;
+}
+
 export class Sim {
-  b: CaseBundle;
   st!: SessionState;
   ev: Record<string, EvidenceState> = {};
   scores: ScoreEntry[] = [];
@@ -17,43 +21,27 @@ export class Sim {
   events: SimEvent[] = [];
   agents: Record<string, AgentProfile> = {};
   private fresh: SimEvent[] = [];
-  onEvents: (evs: SimEvent[]) => void = () => {};
+  /** Called after every step with the events it produced; the host persists the document here. */
+  onSave: (sim: Sim, fresh: SimEvent[]) => void | Promise<void> = () => {};
 
-  constructor(public id: string, caseId: string) { this.b = getCase(caseId); }
+  constructor(public id: string, public b: CaseBundle) {}
 
-  dir(...p: string[]) { return rt('sessions', this.id, ...p); }
-
-  static async load(id: string): Promise<Sim> {
-    const st = await readJson<SessionState>(rt('sessions', id, 'state.json'));
-    const s = new Sim(id, st.caseId);
-    s.st = st;
-    s.ev = await readJson(s.dir('evidence.json'), {});
-    s.scores = await readJson(s.dir('scores.json'), []);
-    s.mem = await readJson(s.dir('memory.json'), {});
-    s.preds = await readJson(s.dir('predictions.json'), s.preds);
-    s.events = await readEvents<SimEvent>(s.dir('events'));
-    // Crash recovery: the event log is written before the snapshot. If the snapshot is behind, the
-    // interrupted step is simply re-run; events it already logged are dropped so the log stays consistent.
-    const last = s.events.length ? s.events[s.events.length - 1].seq : 0;
-    if (last > st.seq) { s.events = s.events.filter((e) => e.seq <= st.seq); await s.rewriteEvents(); }
+  toDoc(): SessionDoc {
+    return { format: 'interrogation-room/session@1', state: this.st, evidence: this.ev, scores: this.scores, memory: this.mem, predictions: this.preds, events: this.events, agents: this.agents };
+  }
+  static fromDoc(doc: SessionDoc, b: CaseBundle): Sim {
+    if (doc.format !== 'interrogation-room/session@1') throw new Error('Not an Interrogation Room session file.');
+    const s = new Sim(doc.state.id, b);
+    s.st = doc.state; s.ev = doc.evidence; s.scores = doc.scores; s.mem = doc.memory; s.preds = doc.predictions; s.agents = doc.agents || {};
+    // Recovery: if the event log ran ahead of the snapshot (interrupted step), drop the orphans; the step re-runs.
+    s.events = (doc.events || []).filter((e) => e.seq <= doc.state.seq);
     return s;
   }
-  private async rewriteEvents() {
-    const { listDir, removeFile } = await import('./store.ts');
-    for (const f of await listDir(this.dir('events'))) await removeFile(this.dir('events', f));
-    await appendEvents(this.dir('events'), this.events);
-  }
 
-  /** Persist everything that changed during a step. Events first (append-only), snapshot last. */
+  /** Hand everything that changed during a step to the host. */
   async save() {
     const fresh = this.fresh; this.fresh = [];
-    await appendEvents(this.dir('events'), fresh);
-    await Promise.all([
-      writeJson(this.dir('evidence.json'), this.ev), writeJson(this.dir('scores.json'), this.scores),
-      writeJson(this.dir('memory.json'), this.mem), writeJson(this.dir('predictions.json'), this.preds),
-    ]);
-    await writeJson(this.dir('state.json'), this.st, true);
-    if (fresh.length) this.onEvents(fresh);
+    await this.onSave(this, fresh);
   }
   /** Snapshot the working copy so a rejected action can be rolled back without a trace. */
   checkpoint(): () => void {
@@ -63,7 +51,7 @@ export class Sim {
   }
   hasFresh() { return this.fresh.length > 0; }
   freshMs() { return this.fresh.reduce((n, e) => n + (e.ms || 0), 0); }
-  savePreds() { return writeJson(this.dir('predictions.json'), this.preds); }
+  savePreds() { return this.onSave(this, []); }
 
   // ----- deterministic, persisted randomness (so a recovered case continues the same stream) -----
   rand(): number {

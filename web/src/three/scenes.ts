@@ -70,18 +70,18 @@ function office(): Env {
   return base('office', g, { board, anchors: { detective: A(-0.9, 0, -2.75, 0.25), forensic: A(1.7, 0, -1.9, -1.0), prosecutor: A(1.2, 0, -2.8, -0.35), defense: A(-2, 0, -1.2, 1.2) }, wide: { pos: [3.0, 1.9, 2.6], look: [-0.2, 1.2, -2.6] }, exhibit: [0, 0.82, -1.6], fog: ['#0c1016', 7, 24], bounds: [5.2, 2.9, 4.2] }, ['#7f93b0', '#2a221a', 0.6]);
 }
 
-function briefing(): Env {
+function briefing(o: EnvOpts): Env {
   const g = room(9, 8, 3.2, { floor: mat('#2e3438', { map: tex.noise('#3a4146', 5), rough: 0.95 }), wall: mat('#2f3940', { map: tex.noise('#3a454d', 4, 0.05), rough: 0.95 }), ceil: mat('#141618'), trim: '#15181a' });
-  g.add(plane(4.2, 2.2, new THREE.MeshBasicMaterial({ color: '#8f8f8f', map: label('OPERATION MERIDIAN', { bg: '#0d1b2a', fg: '#dfe9f5', sub: 'Major Crimes — initial briefing', w: 1024, h: 540, accent: '#e0a84a' }) }), [0, 1.75, -3.96]), box(4.4, 2.4, 0.04, mat('#0a0a0c'), [0, 1.75, -3.99]));
-  const scr = new THREE.PointLight('#7fb0ff', 10, 8, 1.6); scr.position.set(0, 1.8, -3.2); g.add(scr);
+  g.add(plane(4.2, 2.2, new THREE.MeshBasicMaterial({ color: '#8f8f8f', map: label(o.title.toUpperCase(), { bg: '#0d1b2a', fg: '#dfe9f5', sub: 'Major Crimes — initial briefing', w: 1024, h: 540, accent: '#e0a84a', scale: 0.55 }) }), [0, 1.75, -3.96]), box(4.4, 2.4, 0.04, mat('#0a0a0c'), [0, 1.75, -3.99]));
+  const scr = new THREE.PointLight('#7fb0ff', 5, 8, 1.6); scr.position.set(0, 1.8, -3.2); g.add(scr);
   g.add(group([-2.2, 0, -2.6], 0.3, box(0.6, 1.1, 0.45, mat('#3a2c20', { map: tex.wood('#4a3828', 1) }), [0, 0.55, 0])));
   for (let r = 0; r < 3; r++) for (let c = -2; c <= 2; c++) g.add(group([c * 1.0, 0, 0.3 + r * 1.1], PI, chair(mat('#1f2a36', { rough: 0.9 }), mat('#111'))));
-  const key = new THREE.SpotLight('#ffe0b0', 55, 10, 0.75, 0.7, 1.3); key.position.set(0, 3.1, 0.4); key.target.position.set(0, 1, -2.8); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -0.002; g.add(key, key.target);
+  const key = new THREE.SpotLight('#ffe0b0', 36, 10, 0.75, 0.7, 1.3); key.position.set(0, 3.1, 0.4); key.target.position.set(0, 1, -2.8); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -0.002; g.add(key, key.target);
   g.add(group([-4.48, 1.6, 0.5], PI / 2, windowLit(2.4, 1.3, '#39507a', { blinds: true, ei: 0.7 })), group([3.9, 0, -3.4], 0, plant()), box(0.9, 1.2, 0.04, mat('#8d979c', { rough: 0.5 }), [3.2, 1.6, -3.96]), dust(100, 7, 3, 6, '#a9c6ff', 0.014));
   return base('briefing', g, { anchors: { detective: A(-0.9, 0, -2.7, 0.15), forensic: A(1.0, 0, -2.6, -0.3), prosecutor: A(2.4, 0, -1.9, -0.9) }, wide: { pos: [0.8, 1.7, 2.4], look: [0, 1.25, -2.8] }, exhibit: [0, 1.2, -2.2], fog: ['#0a0e13', 7, 22], bounds: [4.2, 2.9, 3.7] }, ['#7c93b2', '#1c1a18', 0.62]);
 }
 
-function crimeScene(): Env {
+function observatory(): Env {
   const g = new THREE.Group(), R = 9;
   g.add(mesh(new THREE.CircleGeometry(R, 64), mat('#2c2f33', { map: tex.tiles('#33373c', '#2b2e33', 12), rough: 0.55, metal: 0.1 }), [0, 0, 0], [-PI / 2, 0, 0], false));
   const dome = mesh(new THREE.SphereGeometry(R, 48, 24, 0, PI * 2, 0, PI / 2), mat('#20262d', { rough: 0.9, side: THREE.BackSide }), [0, 2.6, 0], [0, 0, 0], false); g.add(dome);
@@ -213,5 +213,42 @@ function archive(): Env {
   return base('archive', g, { anchors: {}, wide: { pos: [1.5, 1.6, 4.4], look: [-0.1, 1.0, 0.6] }, exhibit: [0, 1.25, 1.2], fog: ['#0b0907', 5, 20], bounds: [3.0, 3.3, 7.6] }, ['#8a6a44', '#0c0a08', 0.25]);
 }
 
-const BUILD: Record<SceneId, () => Env> = { interrogation, witness_room: witnessRoom, office, briefing, crime_scene: crimeScene, evidence_room: evidenceRoom, courtroom, jury_room: juryRoom, lab, archive };
-export function buildEnv(id: SceneId): Env { const e = BUILD[id](); e.group.name = id; return e; }
+// The vault of a private gallery: marble, gilt frames, a round vault door, and one empty-looking display case.
+function gallery(): Env {
+  const W = 11, D = 10, H = 4.2;
+  const marble = mat('#d8d2c6', { map: tex.tiles('#ddd7cb', '#c9c2b4', 7), rough: 0.25, metal: 0.05 });
+  const g = room(W, D, H, { floor: marble, wall: mat('#3b2b33', { map: tex.panel('#43303a', 6), rough: 0.8 }), ceil: mat('#1a1416'), trim: '#b08a3c' });
+  const gold = mat('#b08a3c', { metal: 0.85, rough: 0.3 }), steelM = mat('#8a9097', { metal: 0.9, rough: 0.3 }), dark = mat('#1b1b1f', { metal: 0.6, rough: 0.4 });
+  // vault door, ajar, in the back wall
+  const vd = group([2.6, 1.55, -D / 2 + 0.05], 0, cyl(1.35, 1.35, 0.1, mat('#2a2d31', { metal: 0.6, rough: 0.5 }), [0, 0, 0], [Math.PI / 2, 0, 0], 40));
+  const leaf = group([1.2, 0, 0.55], -1.0, cyl(1.2, 1.2, 0.42, steelM, [0, 0, 0], [Math.PI / 2, 0, 0], 40), cyl(0.18, 0.18, 0.2, gold, [0, 0, 0.3], [Math.PI / 2, 0, 0], 24));
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; leaf.add(box(0.05, 0.42, 0.05, gold, [Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0.38], [0, 0, a])); }
+  vd.add(leaf, cyl(1.1, 1.1, 0.02, mat('#0a0a0c'), [0, 0, 0.06], [Math.PI / 2, 0, 0], 40)); g.add(vd);
+  // paintings in gilt frames along the walls, each with its own picture light
+  const paints = ['#4a5a3a', '#6a3a2a', '#2a3a5a', '#5a4a2a', '#3a2a4a'];
+  [[-4.0, -D / 2 + 0.03, 0], [-1.0, -D / 2 + 0.03, 0], [-W / 2 + 0.03, -1.5, Math.PI / 2], [-W / 2 + 0.03, 1.8, Math.PI / 2], [W / 2 - 0.03, 1.2, -Math.PI / 2]].forEach(([x, z, ry], i) => {
+    const f = group([x, 2.0, z], ry, box(1.5, 1.1, 0.06, gold, [0, 0, 0]), plane(1.3, 0.9, mat(paints[i], { map: tex.noise(paints[i], 1, 0.35), rough: 0.9 }), [0, 0, 0.035]), box(0.5, 0.04, 0.12, gold, [0, 0.72, 0.1]));
+    const l = new THREE.SpotLight('#ffdcae', 9, 3, 0.7, 0.6, 1.5); l.position.set(0, 0.7, 0.25); l.target.position.set(0, 0, 0); f.add(l, l.target); g.add(f);
+  });
+  // the display case on its plinth, lid open, with the fake bird inside
+  g.add(box(0.9, 1.0, 0.9, mat('#efe9df', { rough: 0.35 }), [-0.6, 0.5, -0.8]), box(0.96, 0.05, 0.96, gold, [-0.6, 1.02, -0.8]));
+  const glass = mat('#cfe8f0', { opacity: 0.18, rough: 0.05, metal: 0.1 });
+  g.add(box(0.8, 0.6, 0.02, glass, [-0.6, 1.35, -0.41]), box(0.8, 0.6, 0.02, glass, [-0.6, 1.35, -1.19]), box(0.02, 0.6, 0.78, glass, [-1.0, 1.35, -0.8]), box(0.02, 0.6, 0.78, glass, [-0.2, 1.35, -0.8]));
+  const lid = box(0.82, 0.02, 0.8, glass, [-0.6, 1.9, -1.15]); lid.rotation.x = -1.1; g.add(lid);
+  const bird = group([-0.6, 1.06, -0.8], 0.6, ball(0.07, gold, [0, 0.1, 0]), ball(0.045, gold, [0.07, 0.17, 0]), mesh(new THREE.ConeGeometry(0.015, 0.05, 8), mat('#7a1f33'), [0.12, 0.17, 0], [0, 0, -Math.PI / 2]), cyl(0.07, 0.09, 0.05, dark, [0, 0.025, 0]));
+  const tail = mesh(new THREE.ConeGeometry(0.04, 0.14, 4), mat('#2f6a5a', { metal: 0.5, rough: 0.3 }), [-0.1, 0.13, 0], [0, 0, Math.PI / 2 + 0.4]); bird.add(tail); g.add(bird);
+  const caseLight = new THREE.SpotLight('#fff2dc', 40, 6, 0.32, 0.5, 1.4); caseLight.position.set(-0.6, H - 0.2, -0.8); caseLight.target.position.set(-0.6, 1, -0.8); caseLight.castShadow = true; caseLight.shadow.mapSize.set(1024, 1024); caseLight.shadow.bias = -0.002; g.add(caseLight, caseLight.target);
+  // velvet rope stanchions, evidence markers, a forensic floodlight
+  for (const [x, z] of [[-2.2, 0.6], [-0.6, 0.9], [1.0, 0.6]]) g.add(cyl(0.03, 0.03, 0.95, gold, [x, 0.475, z]), ball(0.05, gold, [x, 0.98, z]), cyl(0.18, 0.2, 0.04, gold, [x, 0.02, z]));
+  const rope = mat('#7a1f2a', { rough: 0.9 }); g.add(box(1.6, 0.04, 0.04, rope, [-1.4, 0.85, 0.75], [0, 0.18, 0]), box(1.6, 0.04, 0.04, rope, [0.2, 0.85, 0.75], [0, -0.18, 0]));
+  [[-0.2, -0.2], [1.6, -3.4], [-1.2, -1.6]].forEach(([x, z], i) => g.add(group([x, 0, z], i, mesh(new THREE.ConeGeometry(0.09, 0.16, 4), mat('#f2c230', { rough: 0.5 }), [0, 0.08, 0]), plane(0.07, 0.07, new THREE.MeshBasicMaterial({ map: label(String(i + 1), { bg: '#f2c230', w: 64, h: 64 }) }), [0, 0.09, 0.062], [-0.5, 0, 0]))));
+  g.add(group([3.4, 0, 2.6], 0, cyl(0.02, 0.02, 1.9, dark, [0, 0.95, 0]), box(0.5, 0.3, 0.08, dark, [0, 2.0, 0]), box(0.44, 0.24, 0.02, mat('#fff', { emissive: '#e8f2ff', ei: 4 }), [0, 2.0, -0.05])));
+  const flood = new THREE.SpotLight('#e6efff', 70, 12, 0.6, 0.6, 1.5); flood.position.set(3.4, 2.0, 2.6); flood.target.position.set(0, 0.6, -1.4); flood.castShadow = true; flood.shadow.mapSize.set(1024, 1024); flood.shadow.bias = -0.002; g.add(flood, flood.target);
+  for (const x of [-3, 0, 3]) g.add(group([x, H, 0], 0, cyl(0.01, 0.01, 0.6, dark, [0, -0.3, 0], [0, 0, 0], 6), cyl(0.3, 0.3, 0.06, gold, [0, -0.62, 0], [0, 0, 0], 24), ball(0.12, mat('#fff3d6', { emissive: '#ffdca0', ei: 1.2 }), [0, -0.7, 0])));
+  g.add(dust(160, 9, 3.8, 8, '#ffe3b5', 0.016));
+  return base('crime_scene', g, { anchors: { detective: A(0.6, 0, 0.1, -2.6), forensic: A(-1.7, 0, -0.1, 2.4), prosecutor: A(1.6, 0, 1.2, -2.4) }, wide: { pos: [3.4, 2.1, 3.9], look: [-0.4, 1.1, -1.4] }, exhibit: [-0.6, 1.25, -0.2], fog: ['#120d10', 7, 26], bounds: [5.2, 3.9, 4.6] }, ['#c6a98a', '#1f1418', 0.42]);
+}
+
+export interface EnvOpts { crimeKind: string; title: string }
+const BUILD: Record<SceneId, (o: EnvOpts) => Env> = { interrogation, witness_room: witnessRoom, office, briefing, crime_scene: (o) => (o.crimeKind === 'gallery' ? gallery() : observatory()), evidence_room: evidenceRoom, courtroom, jury_room: juryRoom, lab, archive };
+export function buildEnv(id: SceneId, o: EnvOpts = { crimeKind: 'observatory', title: 'Major Crimes' }): Env { const e = BUILD[id](o); e.group.name = id; return e; }

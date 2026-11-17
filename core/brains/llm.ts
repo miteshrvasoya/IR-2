@@ -1,8 +1,5 @@
 // LLM-backed minds. The model receives the agent's role-scoped view and must answer with one JSON
 // action; everything it says is treated as an untrusted proposal and validated by the engine.
-import Anthropic from '@anthropic-ai/sdk';
-import dns from 'node:dns/promises';
-import net from 'node:net';
 import { z } from 'zod';
 import type { AgentView } from '../views.ts';
 import type { AgentDecision } from '../../shared/types.ts';
@@ -68,11 +65,12 @@ export function parseDecision(raw: string): AgentDecision {
   return { thought: d.thought || '', action: d.action as any, theory: d.theory, note: d.note };
 }
 
-export interface LlmTarget { provider: 'anthropic' | 'openai-compatible'; model: string; apiKey: string; baseUrl?: string; platformKey?: boolean }
+export interface LlmTarget { provider: 'anthropic' | 'openai-compatible'; model: string; apiKey: string; baseUrl?: string }
 
 async function callAnthropic(t: LlmTarget, system: string, user: string): Promise<string> {
-  // User-supplied keys always go to Anthropic's own endpoint, never to an ambient ANTHROPIC_BASE_URL.
-  const client = new Anthropic({ apiKey: t.apiKey, maxRetries: 0, timeout: config.llmTimeoutMs, ...(t.platformKey ? {} : { baseURL: 'https://api.anthropic.com' }) });
+  // The key belongs to the user running this page and goes straight from their browser to Anthropic.
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');   // loaded only when an agent uses it
+  const client = new Anthropic({ apiKey: t.apiKey, maxRetries: 0, timeout: config.llmTimeoutMs, dangerouslyAllowBrowser: true, baseURL: t.baseUrl || 'https://api.anthropic.com' });
   const base = { model: t.model, max_tokens: 4000, system, messages: [{ role: 'user' as const, content: user }] };
   let res;
   try { res = await client.messages.create({ ...base, output_config: { effort: 'low' } } as any); }
@@ -81,18 +79,17 @@ async function callAnthropic(t: LlmTarget, system: string, user: string): Promis
   return res.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
 }
 
-/** Custom endpoints are user input: require https and refuse private / loopback addresses (SSRF). */
-export async function assertSafeUrl(raw: string) {
+/** Custom endpoints must be https (plain http is allowed only for localhost development). */
+export function assertSafeUrl(raw: string) {
   const u = new URL(raw);
-  if (config.allowLocalLlm) return;
-  if (u.protocol !== 'https:') throw new Error('base URL must be https');
-  const addrs = net.isIP(u.hostname) ? [{ address: u.hostname }] : await dns.lookup(u.hostname, { all: true });
-  for (const { address } of addrs) if (/^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|::1$|f[cd]|fe80:)/i.test(address)) throw new Error('base URL resolves to a private address');
+  if (u.protocol === 'https:') return;
+  if (u.protocol === 'http:' && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(u.hostname)) return;
+  throw new Error('base URL must be https');
 }
 
 async function callOpenAI(t: LlmTarget, system: string, user: string): Promise<string> {
   const base = (t.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
-  await assertSafeUrl(base);
+  assertSafeUrl(base);
   const body: any = { model: t.model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_object' } };
   for (let i = 0; i < 2; i++) {
     const r = await fetch(`${base}/chat/completions`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${t.apiKey}` }, body: JSON.stringify(body), signal: AbortSignal.timeout(config.llmTimeoutMs), redirect: 'error' });

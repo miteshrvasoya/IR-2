@@ -11,7 +11,7 @@ import type { SceneId, SimEvent } from '../../../shared/types';
 import { buildEnv, type Env, type Anchor } from './scenes';
 import { Character, type Look } from './character';
 import { Sound } from './audio';
-import { mat, box, cyl, plane, ball, label, group } from './kit';
+import { mat, box, cyl, plane, ball, label, group, mesh } from './kit';
 
 export interface CastSeat { id: string; role: string; characterId?: string; look: Look | null; name: string | null }
 
@@ -38,6 +38,7 @@ function prop(v: { kind: string; color?: string }): THREE.Group {
     case 'prints': g.add(box(0.3, 0.008, 0.2, dark)); for (let i = 0; i < 3; i++) for (let r = 1; r <= 3; r++) { const m = new THREE.Mesh(new THREE.RingGeometry(0.008 * r, 0.008 * r + 0.003, 20), new THREE.MeshBasicMaterial({ color: '#7fe8ff' })); m.rotation.x = -Math.PI / 2; m.position.set(-0.09 + i * 0.09, 0.006, 0); m.scale.y = 1.3; g.add(m); } break;
     case 'phone': g.add(box(0.09, 0.012, 0.18, dark), box(0.08, 0.002, 0.16, mat('#0c1420', { emissive: '#8fc0ff', ei: 1.2 }), [0, 0.007, 0])); g.scale.setScalar(1.6); break;
     case 'ledger': case 'book': g.add(box(0.26, 0.04, 0.34, mat(v.kind === 'ledger' ? '#1f3a2c' : '#3a2a1a', { rough: 0.7 })), box(0.24, 0.03, 0.32, paper, [0.006, 0.006, 0]), box(0.12, 0.002, 0.05, mat('#d9b44a', { metal: 0.7 }), [0, 0.022, -0.08])); break;
+    case 'bird': { const gold = mat(v.color || '#d4af37', { metal: 0.85, rough: 0.28 }); g.add(cyl(0.08, 0.1, 0.05, dark, [0, 0.025, 0]), ball(0.075, gold, [0, 0.12, 0]), ball(0.048, gold, [0.075, 0.19, 0])); g.add(mesh(new THREE.ConeGeometry(0.016, 0.05, 8), mat('#7a1f33'), [0.13, 0.19, 0], [0, 0, -Math.PI / 2]), mesh(new THREE.ConeGeometry(0.045, 0.15, 4), mat('#2f6a5a', { metal: 0.5, rough: 0.3 }), [-0.11, 0.15, 0], [0, 0, Math.PI / 2 + 0.4])); g.scale.setScalar(1.6); break; }
     case 'usb': g.add(box(0.03, 0.012, 0.07, mat(v.color || '#c0392b', { rough: 0.4 })), box(0.022, 0.008, 0.03, mat('#c8ccd0', { metal: 0.9, rough: 0.25 }), [0, 0, 0.05])); g.scale.setScalar(3.2); break;
     default: g.add(box(0.2, 0.12, 0.2, mat('#8a7650')));
   }
@@ -85,6 +86,14 @@ export class Stage {
   }
 
   // ---------- cast ----------
+  private envOpts = { crimeKind: 'observatory', title: 'Major Crimes' };
+  /** Tell the stage which case it is staging (crime-scene set, briefing title). Rebuilds case-specific rooms. */
+  setCase(c: { title: string; crimeScene?: { kind: string } }) {
+    const o = { crimeKind: c.crimeScene?.kind || 'observatory', title: c.title };
+    if (o.crimeKind === this.envOpts.crimeKind && o.title === this.envOpts.title) return;
+    this.envOpts = o; this.envs.delete('crime_scene'); this.envs.delete('briefing');
+    if (this.env && (this.env.id === 'crime_scene' || this.env.id === 'briefing')) this.swap(this.env.id, true);
+  }
   setCast(seats: CastSeat[], defendant: string | null) {
     this.cast = seats; this.defendant = defendant;
     for (const s of seats) if (s.look && !this.chars.has(s.id)) { const c = new Character(s.id, s.role, s.look); c.root.visible = false; this.chars.set(s.id, c); this.scene.add(c.root); }
@@ -115,7 +124,7 @@ export class Stage {
   // ---------- scenes ----------
   private swap(id: SceneId, instant: boolean) {
     if (this.env) this.scene.remove(this.env.group);
-    if (!this.envs.has(id)) this.envs.set(id, buildEnv(id));
+    if (!this.envs.has(id)) this.envs.set(id, buildEnv(id, this.envOpts));
     this.env = this.envs.get(id)!; this.scene.add(this.env.group);
     const [fc, fn, ff] = this.env.fog; this.scene.fog = new THREE.Fog(fc, fn, ff); this.scene.background = new THREE.Color(fc);
     this.clearProp(); this.arrange(true); this.sound.ambient(id);

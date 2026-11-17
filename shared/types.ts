@@ -41,6 +41,13 @@ export interface CaseDef {
   procedure: { investigationHours: number; interviewExchanges: number; maxWitnessesPerSide: number; maxQuestionsDirect: number; maxQuestionsCross: number; juryRounds: number; standard: string };
   crimeScene: { kind: string; label: string };
   estimatedMinutes: number; topicLabels?: Record<string, string>;
+  vocab: CaseVocab;
+}
+
+/** Case-flavoured wording the offline reasoner weaves into speech (LLM agents read the case files directly). */
+export interface CaseVocab {
+  timeline: string; crime: string; victimShort: string; relationshipQuestion: string; window: string; windowStart: string; place: string; scene: string; goal: string; harm: string;
+  forensicBrief: [string, string]; prosecutionOpening: [string, string]; sentences: Record<string, string>; responsibleQuestion: string;
 }
 
 export interface CharacterDef {
@@ -49,6 +56,7 @@ export interface CharacterDef {
   persona: string;                // private brief given to whoever plays this character
   goals: string;                  // private
   look: { skin: string; hair: string; hairStyle: string; outfit: string; accent: string; build?: number };
+  actorStyle?: string;            // which house actor temperament suits this character
 }
 
 export interface FactDef {

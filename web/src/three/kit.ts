@@ -47,13 +47,13 @@ export const tex = {
 };
 
 /** A text card painted to a texture (evidence labels, screens, signs). */
-export function label(text: string, o: { w?: number; h?: number; bg?: string; fg?: string; font?: string; sub?: string; accent?: string } = {}) {
+export function label(text: string, o: { w?: number; h?: number; bg?: string; fg?: string; font?: string; sub?: string; accent?: string; scale?: number } = {}) {
   const w = o.w ?? 512, h = o.h ?? 256, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const c = cv.getContext('2d')!;
   c.fillStyle = o.bg ?? '#efe6d2'; c.fillRect(0, 0, w, h);
   if (o.accent) { c.fillStyle = o.accent; c.fillRect(0, 0, w, h * 0.09); }
   c.fillStyle = o.fg ?? '#1a1a1a'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  let size = Math.floor(h * 0.24); c.font = `${o.font ?? '700'} ${size}px Georgia, serif`;
+  let size = Math.floor(h * 0.24 * (o.scale ?? 1)); c.font = `${o.font ?? '700'} ${size}px Georgia, serif`;
   const words = text.split(' '), lines: string[] = []; let cur = '';
   for (const wd of words) { if (c.measureText(cur + ' ' + wd).width > w * 0.88 && cur) { lines.push(cur); cur = wd; } else cur = cur ? cur + ' ' + wd : wd; }
   lines.push(cur);

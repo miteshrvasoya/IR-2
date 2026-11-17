@@ -7,9 +7,9 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 
-process.env.IR_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ir-llm-'));
-process.env.IR_SPEED = '0'; process.env.IR_ALLOW_LOCAL_LLM = '1'; process.env.IR_LLM_TIMEOUT_MS = '3000';
-delete process.env.ANTHROPIC_API_KEY;
+
+
+
 
 let mode: 'ok' | 'garbage' | 'down' = 'ok', calls = 0, sawKey = '';
 const prompts: any[] = [];
@@ -30,20 +30,21 @@ const server = http.createServer((req, res) => {
 await new Promise<void>((r) => server.listen(0, r));
 const port = (server.address() as any).port;
 
-const acc = await import('../server/accounts.ts');
-const mgr = await import('../server/manager.ts');
-await acc.seedHouseAgents();
-const u = await acc.register('llmowner', 'secret12');
-const cred = await acc.saveCredential(u.id, 'openai-compatible', 'fake', 'sk-fake-key-123456');
-const agent = await acc.saveAgent(u.id, { name: 'Remote Mind', tagline: '', preferredRoles: ['detective'], personality: 'Careful.', background: '', style: 'measured', traits: { rigor: 0.8, aggression: 0.3, skepticism: 0.7, drama: 0.2, empathy: 0.5, humor: 0.1 }, instructions: '', model: { provider: 'openai-compatible', model: 'fake', baseUrl: `http://127.0.0.1:${port}/v1`, credentialId: cred.id }, look: { skin: '#d9a37e', hair: '#222222', hairStyle: 'short', accent: '#334455' }, listed: false } as any);
-const user = { ...(await acc.publicUser(u.id))!, guest: false };
+const { loadCase, loadRoster } = await import('../scripts/disk.ts');
+const { createSession, seat, fillHouse, begin, run } = await import('../core/runner.ts');
+const { emptyStats } = await import('../core/referee.ts');
+const { config } = await import('../core/config.ts');
+config.llmTimeoutMs = 3000;
+const roster = loadRoster().map((a) => ({ ...a, stats: emptyStats() }));
+const agent: any = { id: 'ag_remote', ownerId: 'u_test', house: false, name: 'Remote Mind', tagline: '', preferredRoles: ['detective'], personality: 'Careful.', background: '', style: 'measured', traits: { rigor: 0.8, aggression: 0.3, skepticism: 0.7, drama: 0.2, empathy: 0.5, humor: 0.1 }, instructions: '', model: { provider: 'openai-compatible', model: 'fake', baseUrl: `http://127.0.0.1:${port}/v1`, credentialId: 'k1' }, look: { skin: '#d9a37e', hair: '#222222', hairStyle: 'short', accent: '#334455' }, listed: false, stats: emptyStats() };
+// The host resolves an agent's key; in the browser this reads the user's local key store.
+const resolve = (_s: any, _seat: string, a: any) => (a.model.provider === 'house' ? null : { provider: a.model.provider, model: a.model.model, apiKey: 'sk-fake-key-123456', baseUrl: a.model.baseUrl });
 
 async function play(m: typeof mode) {
   mode = m; calls = 0;
-  const sim = await mgr.createSession('meridian', null, { speed: 0 });
-  await mgr.join(sim, 'detective', agent.id, user);
-  await mgr.fillHouse(sim, null); await mgr.setReady(sim, 'detective', user, true);
-  while (mgr.isRunning(sim.id)) await new Promise((r) => setTimeout(r, 20));
+  const sim = createSession(loadCase('meridian'), { speed: 0 });
+  seat(sim, 'detective', agent, 'u_test'); fillHouse(sim, roster); begin(sim);
+  await run(sim, { resolve });
   return sim;
 }
 

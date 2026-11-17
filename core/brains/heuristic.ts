@@ -53,10 +53,9 @@ function topicLabel(v: AgentView, topic: string) {
 }
 
 export function heuristicDecide(v: AgentView): AgentDecision {
-  const r = rngFor(v), T = v.me.traits, role = v.me.role;
+  const r = rngFor(v), T = v.me.traits, role = v.me.role, V = v.vocab;
   const has = (t: string) => v.options.some((o) => o.type === t);
   const choices = (t: string, p: string) => v.options.find((o) => o.type === t)?.choices?.[p] || [];
-  const victim = surname(v.victim.name);
   const ranks = weigh(v, v.evidence, v.facts, T.skepticism);
   const top = ranks[0], second = ranks[1];
   const theory = top && top.total > 1 ? { suspect: top.id, confidence: Math.max(0.1, Math.min(0.95, (top.total - (second?.total || 0)) / 10 + top.total / 24)), summary: `${top.name}: ${Object.values(top.notes).flat().slice(0, 3).map((n) => n.note).join(' ')}` } : { suspect: null, confidence: 0.1, summary: 'Nothing yet points firmly at anyone.' };
@@ -69,14 +68,13 @@ export function heuristicDecide(v: AgentView): AgentDecision {
     // ------------------------------------------------------------------ briefing
     case 'brief': {
       if (role === 'detective') return say(T.rigor > 0.6
-        ? `${v.victim.name} left the hall alive and was found dead a little over an hour later. I want that hour accounted for by records before I listen to anyone's version of it: doors, cameras, the scene itself. ${names.join(', ')} — three people with a quarrel is three stories to test, not three suspects. Nobody is the answer yet.`
-        : `Somebody in that building wanted ${victim} gone, and I've got three names: ${names.join(', ')}. I'll walk the scene, then I want them in a room one at a time while their stories are still warm. People crack before paperwork does.`, 'Set out how I intend to run this.');
+        ? `${V.timeline} I want that window accounted for by records before I listen to anyone's version of it: doors, cameras, the scene itself. ${names.join(', ')} — three people with a quarrel is three stories to test, not three suspects. Nobody is the answer yet.`
+        : `Somebody in that building is behind ${V.crime}, and I've got three names: ${names.join(', ')}. I'll walk the scene, then I want them in a room one at a time while their stories are still warm. People crack before paperwork does.`, 'Set out how I intend to run this.');
       if (role === 'forensic') return say(T.drama > 0.5
-        ? `Before anyone says "fall", let me read the floor. A stumble and a shove write completely different geometry — where he landed, how far out, what he was holding. Get me the scene untouched, his clothes, his hands, and anything electronic. The body will tell us which story is true.`
-        : `I'll say this once: "he fell" is a conclusion, not an observation. I need the body position documented, the post-mortem ordered, and every exhibit sealed with continuity. Send me what you find and I'll tell you what it shows — and what it doesn't.`, 'Flag the accident assumption.');
+        ? V.forensicBrief[0] : V.forensicBrief[1], 'Flag the easy assumption.');
       return say(T.rigor > 0.6
-        ? `For a charge I need three things pointing at one person: a motive, the opportunity, and something physical that ties them to that gantry. A quarrel is not a case. And if you go into anyone's private space, you bring me a warrant first — I will not lose an exhibit to a suppression motion.`
-        : `Bring me a story a jury can feel: who wanted ${victim} dead, who was close enough to do it, and one exhibit I can hold up in closing. Get me that and I'll do the rest.`, 'Tell the team what a charge needs.');
+        ? `For a charge I need three things pointing at one person: a motive, the opportunity, and something physical that ties them to ${V.scene}. A quarrel is not a case. And if you go into anyone's private space, you bring me a warrant first — I will not lose an exhibit to a suppression motion.`
+        : `Bring me a story a jury can feel: ${V.goal}, who was close enough to do it, and one exhibit I can hold up in closing. Get me that and I'll do the rest.`, 'Tell the team what a charge needs.');
     }
 
     // ------------------------------------------------------------------ investigation
@@ -106,7 +104,7 @@ export function heuristicDecide(v: AgentView): AgentDecision {
       }
       if (has('confer') && inv.leadsDone.length >= 5 && !v.transcript.some((x) => x.kind === 'reply') && r() < 0.5) cands.push({ u: 6.5, act: { type: 'confer', to: 'prosecutor', text: top && top.total > 3 ? `If I brought you ${top.name} today, what would you still be missing?` : `Nothing points cleanly at anyone yet. What would you need to see before you would charge at all?` }, why: 'Check what the prosecutor needs before I spend the remaining hours.' });
       cands.sort((a, b) => b.u - a.u);
-      const enough = top && top.total >= 6 + T.rigor * 7 && missing(top).length === 0;
+      const enough = top && top.total >= 6 + T.rigor * 7 && missing(top).length === 0 && inv.leadsDone.length >= 3;
       const b = cands[0];
       if (b && b.u >= 3 && !(enough && !an.length && inv.pendingLab.length === 0 && T.rigor < 0.7)) return done(b.act, b.why);
       if (has('wait') && inv.pendingLab.length) return done({ type: 'wait' }, 'Nothing more I can usefully do until the lab reports.');
@@ -124,14 +122,14 @@ export function heuristicDecide(v: AgentView): AgentDecision {
       }
       const witnessFact = v.facts.find((f) => deniedTopics.includes(f.topic) && !c.caughtOutOn.includes(f.topic) && !st.revealed.includes(f.id) && !c.askedSoFar.some((q: string) => q.includes(short(f.text, 40))));
       if (witnessFact && n >= 1) return done({ type: 'ask', present: witnessFact.id, topic: witnessFact.topic, text: `Someone else has told me this: ${short(witnessFact.text, 170)} That is not what you told me. Would you like to try again?` }, 'A witness account contradicts them.');
-      if (n === 0 && st.count <= 1) return done({ type: 'ask', topic: `${subj.id}.whereabouts`, text: pick(r, [`Take me through your evening from the moment ${victim} left the hall until the alarm was raised. Where were you, and who can confirm it?`, `Start with the simple part. Between half past ten and midnight — where were you, exactly?`]) }, 'Open account first; pin them to a version.');
+      if (n === 0 && st.count <= 1) return done({ type: 'ask', topic: `${subj.id}.whereabouts`, text: pick(r, [`Take me through your movements ${V.windowStart}. Where were you, and who can confirm it?`, `Start with the simple part. ${V.window.charAt(0).toUpperCase() + V.window.slice(1)} — where were you, exactly?`]) }, 'Open account first; pin them to a version.');
       // 2. Exhibits that bear on this person and have not been put to them yet.
       const rel = held.find((e) => e.relevantTo.includes(subj.id) && e.points.some((p) => p.suspect === subj.id && !p.exculpatory));
       if (rel && n >= 1 && (T.aggression > 0.35 || n >= 2)) return done({ type: 'ask', present: rel.id, topic: rel.topics[0], text: `I want to show you something: the ${lc(rel.title)}. ${short(rel.points.find((p) => p.suspect === subj.id)!.note, 140)} What do you say to that?` }, `Test them with ${rel.id}.`);
       const probes = [
-        { k: 'relationship', q: `How were things between you and ${victim} — that day in particular?` },
-        { k: 'observations', q: `Who else did you see or hear near the dome that night? Anything at all, however small.` },
-        { k: 'observations2', q: subj.kind === 'witness' ? `You know that building. Who could get into the dome after hours, and how?` : `If it wasn't you, help me: who had a reason, and who had the means to get in there?` },
+        { k: 'relationship', q: V.relationshipQuestion },
+        { k: 'observations', q: `Who else did you see or hear near ${V.place} at the time? Anything at all, however small.` },
+        { k: 'observations2', q: subj.kind === 'witness' ? `You know that building. Who could get into ${V.place} after hours, and how?` : `If it wasn't you, help me: who had a reason, and who had the means to get in there?` },
       ].filter((p) => !c.askedSoFar.some((q: string) => q.startsWith(p.q.slice(0, 22))));
       if (c.caughtOutOn.length && !c.askedSoFar.some((q: string) => /really happened/.test(q))) return done({ type: 'ask', topic: c.caughtOutOn[0], text: `The records have already caught you out once. So I'll ask plainly, and I suggest you think before you answer: what really happened?` }, 'They have been caught lying; press now.');
       if (probes.length && n < 4) return done({ type: 'ask', topic: probes[0].k.replace('2', ''), text: probes[0].q }, 'Widen the picture.');
@@ -183,11 +181,11 @@ export function heuristicDecide(v: AgentView): AgentDecision {
         if (has('request_more') && target && target.total >= 3) return done({ type: 'request_more', text: `I am not filing on this. Against ${target.name} I still lack ${miss.join(' and ') || 'enough weight'}. Use the hours you have left and bring it back.` }, 'Not provable yet; send it back.');
         if (!target || target.total < 4.5) return done({ type: 'decline', reason: `On this file I cannot prove a case against anyone beyond reasonable doubt${target ? `: the best of it points at ${target.name}, and it is missing ${miss.join(' and ') || 'weight'}` : ''}. I will not charge on suspicion.` }, 'Declining is the honest call.');
       }
-      const murder = target!.motive >= 2;
+      const primary = target!.motive >= 2, chargeId = primary ? v.charges[0].id : (v.charges[1] || v.charges[0]).id;
       const el = (k: string, fallback: string) => strip(best(target!, k)?.note || fallback);
-      return done({ type: 'charge', suspectId: target!.id, chargeId: murder ? 'murder' : 'manslaughter', theory: `I am charging ${target!.name}. ${murder ? `Motive: ${lc(el('motive', ''))}. ` : ''}Opportunity: ${lc(el('opportunity', 'present in the building at the time'))}. And the link to the act itself: ${lc(el('identity', 'the surrounding circumstances'))}.${rec && rec !== target!.id ? ` I note the detective recommended otherwise; the evidence, weighed as a jury will weigh it, does not.` : ''}` }, `The file supports ${target!.name}.`, { suspect: target!.id, confidence: 0.7, summary: theory.summary });
+      return done({ type: 'charge', suspectId: target!.id, chargeId, theory: `I am charging ${target!.name}. ${primary ? `Motive: ${lc(el('motive', ''))}. ` : ''}Opportunity: ${lc(el('opportunity', 'present in the building at the time'))}. And the link to the act itself: ${lc(el('identity', 'the surrounding circumstances'))}.${rec && rec !== target!.id ? ` I note the detective recommended otherwise; the evidence, weighed as a jury will weigh it, does not.` : ''}` }, `The file supports ${target!.name}.`, { suspect: target!.id, confidence: 0.7, summary: theory.summary });
     }
-    case 'arraign': return say(`This court is in session. ${v.record!.defendantName}, you are charged with ${lc(v.record!.charge || 'an offence')} in connection with the death of ${v.victim.name}. Counsel, how does the defendant plead?`);
+    case 'arraign': return say(`This court is in session. ${v.record!.defendantName}, you are charged with ${lc(v.record!.charge || 'an offence')} in connection with ${V.crime}. Counsel, how does the defendant plead?`);
     case 'plea': return done({ type: 'plea', plea: 'not_guilty', text: pick(r, ['Not guilty, Your Honour.', `My client pleads not guilty, Your Honour, and looks forward to hearing what the prosecution thinks it can prove.`]) }, 'Put them to proof.');
     case 'motions': {
       const can = choices('motion_suppress', 'evidenceId').map((c) => v.evidence.find((e) => e.id === c.id)!).filter(Boolean);
@@ -212,7 +210,7 @@ export function heuristicDecide(v: AgentView): AgentDecision {
       const usable = v.evidence.filter((e) => !['suppressed', 'excluded'].includes(e.status));
       if (role === 'prosecutor') {
         const ex = usable.filter((e) => e.points.some((p) => p.suspect === d.defendant && !p.exculpatory)).slice(0, 3).map((e) => `the ${lc(e.title)}`);
-        return done({ type: 'statement', text: `Members of the jury, ${v.victim.name} did not simply fall. ${T.drama > 0.6 ? `Someone stood on that gantry with him, close enough to touch, and when it was over walked back to the party.` : `The evidence will show that another person was on that gantry with him.`} The prosecution says that person was ${d.defendantName}. ${best(mine, 'motive') ? `You will hear why: ${lc(strip(best(mine, 'motive')!.note))}. ` : ''}You will see ${ex.join(', ') || 'the exhibits'}. ${T.rigor > 0.6 ? 'I ask only that you follow the evidence, exhibit by exhibit, and hold me to my burden.' : 'And when you have seen it all, you will not be in any doubt.'}` }, 'Tell them what I will prove.');
+        return done({ type: 'statement', text: `Members of the jury, ${T.drama > 0.6 ? V.prosecutionOpening[0] : V.prosecutionOpening[1]} The prosecution says that person was ${d.defendantName}. ${best(mine, 'motive') ? `You will hear why: ${lc(strip(best(mine, 'motive')!.note))}. ` : ''}You will see ${ex.join(', ') || 'the exhibits'}. ${T.rigor > 0.6 ? 'I ask only that you follow the evidence, exhibit by exhibit, and hold me to my burden.' : 'And when you have seen it all, you will not be in any doubt.'}` }, 'Tell them what I will prove.');
       }
       const weak = usable.filter((e) => e.limitations.length && e.points.some((p) => p.suspect === d.defendant && !p.exculpatory))[0];
       const alt = ranks.find((x) => x.id !== d.defendant && x.total >= 3);
@@ -245,7 +243,7 @@ export function heuristicDecide(v: AgentView): AgentDecision {
         const cites = adm.filter((e) => e.points.some((p) => p.suspect === d.defendant && !p.exculpatory));
         const line = (k: string, label: string) => best(mine, k) ? `${label}: ${lc(strip(best(mine, k)!.note))}. ` : '';
         const attack = adm.filter((e) => e.points.some((p) => p.suspect === d.defendant && p.exculpatory) && e.limitations.length).map((e) => ({ evidenceId: e.id, ground: e.limitations[0].ground }));
-        return done({ type: 'argue', cites: cites.map((e) => e.id), challenges: attack, text: `Members of the jury, set the speeches aside and count what is in evidence. ${line('motive', 'Motive')}${line('opportunity', 'Opportunity')}${line('identity', 'And the act itself')}${cites.length ? `That is ${cites.length} exhibit${cites.length > 1 ? 's' : ''}, each pointing the same way. ` : ''}${d.testimony.length ? `You heard it from the witness box as well. ` : ''}${T.drama > 0.6 ? `The defense offers you coincidence upon coincidence. ${victim} deserves better than coincidence.` : `Each piece has an innocent explanation if you take it alone. Taken together, there is only one.`} ${missing(mine).length ? '' : 'Every element is proved. '}I ask you to return a verdict of guilty.` }, 'Tie each element to the record.');
+        return done({ type: 'argue', cites: cites.map((e) => e.id), challenges: attack, text: `Members of the jury, set the speeches aside and count what is in evidence. ${line('motive', 'Motive')}${line('opportunity', 'Opportunity')}${line('identity', 'And the act itself')}${cites.length ? `That is ${cites.length} exhibit${cites.length > 1 ? 's' : ''}, each pointing the same way. ` : ''}${d.testimony.length ? `You heard it from the witness box as well. ` : ''}${T.drama > 0.6 ? `The defense offers you coincidence upon coincidence. ${V.victimShort} deserves better than coincidence.` : `Each piece has an innocent explanation if you take it alone. Taken together, there is only one.`} ${missing(mine).length ? '' : 'Every element is proved. '}I ask you to return a verdict of guilty.` }, 'Tie each element to the record.');
       }
       const weakE = adm.filter((e) => e.limitations.length && e.points.some((p) => p.suspect === d.defendant && !p.exculpatory)).slice(0, 4);
       const all = weigh(v, adm, d.testimony as any, 0), alt = all.find((x) => x.id !== d.defendant && x.total >= 3);
@@ -255,7 +253,7 @@ export function heuristicDecide(v: AgentView): AgentDecision {
     case 'instruct': return say(`Members of the jury. The defendant is presumed innocent. The burden is on the prosecution and never moves. ${v.standard} What counsel said is not evidence. You will now retire.`);
     case 'deliberate': return deliberate(v, r);
     case 'judgment': { const k = v.context.outcome; return say(k === 'convicted' ? `The verdict of the jury is recorded. ${v.record!.defendantName}, you stand convicted. I thank the jury for their care.` : k === 'acquitted' ? `The verdict is recorded. ${v.record!.defendantName}, you are acquitted and free to go. The jury has my thanks.` : `The jury being unable to agree, I declare a mistrial. ${v.record!.defendantName} is released. Whether to try this case again is a matter for the prosecution.${quip('I would suggest they bring more evidence next time.')}`); }
-    case 'sentence': return say(`${v.record!.defendantName}, a man is dead and a jury has found that you are responsible. ${v.record!.charge === 'Murder' ? 'For murder the sentence is life imprisonment; I set the minimum term at eighteen years.' : 'For manslaughter I sentence you to nine years\' imprisonment.'} The breach of trust involved, and the steps taken afterwards to conceal it, are aggravating features. Take the defendant down.`);
+    case 'sentence': return say(`${v.record!.defendantName}, ${V.harm}, and a jury has found that you are responsible. ${V.sentences[v.record!.chargeId || ''] || ''} The breach of trust involved, and the steps taken afterwards to conceal it, are aggravating features. Take the defendant down.`);
   }
   // Unknown purpose: do nothing harmful.
   return done({ type: v.options[0]?.type || 'speak', text: '…' }, 'No plan for this situation.');
@@ -277,7 +275,7 @@ function reportText(v: AgentView, ranks: Tally[]): string {
 
 // ---------- a character under questioning ----------
 function answer(v: AgentView, r: Rng): AgentDecision {
-  const ch = v.character!, c = v.context, T = v.me.traits, q: string = c.question.toLowerCase();
+  const V = v.vocab, ch = v.character!, c = v.context, T = v.me.traits, q: string = c.question.toLowerCase();
   const me = ch.id, presented = c.presented ? v.evidence.find((e) => e.id === c.presented.id) : null;
   const selfish = (k: typeof ch.knowledge[0]) => k.topic.startsWith(me + '.') || (k.text.includes(surname(ch.name)) && !/\b(saw|heard|seen)\b/.test(k.text));
   const said = (k: typeof ch.knowledge[0]) => (ch.sworn ? k.testified : k.revealed);
@@ -303,7 +301,7 @@ function answer(v: AgentView, r: Rng): AgentDecision {
   cand = cand.slice(0, 2);
   if (!cand.length && /how certain|how sure|certain are you/.test(q)) return { thought: 'They are testing my confidence.', action: { type: 'answer', text: v.me.style === 'nervous' ? 'I — fairly sure. It was late. But yes, I think so.' : T.aggression > 0.6 ? 'I know what I saw, and I know what time it was.' : 'As sure as I can be. I was not looking at a clock every minute, but I know what I saw.', reveals: [], denies: [] } };
   if (!cand.length && /changed your account|first version/.test(q)) return { thought: 'Credibility attack.', action: { type: 'answer', text: v.me.style === 'nervous' ? 'I was scared. I should have said it straight away. That does not make the rest untrue.' : 'I answered the questions I was asked at the time. I am answering yours now.', reveals: [], denies: [] } };
-  if (!cand.length && /where were you|your evening|whereabouts/.test(q) && ch.knowledge.every((k) => k.topic !== `${me}.whereabouts`)) return { thought: 'Nothing to hide about where I was.', action: { type: 'answer', text: `I was working. ${ch.occupation} — I was at my post the whole evening, and I did not set foot in the dome until it was all over.`, reveals: [], denies: [] } };
+  if (!cand.length && /where were you|your evening|whereabouts/.test(q) && ch.knowledge.every((k) => k.topic !== `${me}.whereabouts`)) return { thought: 'Nothing to hide about where I was.', action: { type: 'answer', text: `I was working. ${ch.occupation} — I was at my post the whole evening, and I did not set foot in ${V.place} until it was all over.`, reveals: [], denies: [] } };
   const reveals: string[] = [], denies: string[] = [], parts: string[] = [];
   const firm = (k: any) => k.firmness ?? 2;
   const leadIn = (k: any) => v.me.style === 'nervous' ? pick(r, ['Okay. Okay — look.', 'All right, fine, I should have said.', 'I — yes. Sorry.']) : T.aggression > 0.6 ? pick(r, ['Fine. If it gets me out of this room.', 'Very well, since you insist.']) : k.stance === 'open' ? pick(r, ['Yes.', 'I can tell you that.', 'Certainly.', '']) : pick(r, ['All right. I will tell you.', 'Very well.', 'I had hoped not to get into this.']);
@@ -360,6 +358,7 @@ function caseInChief(v: AgentView, r: Rng, ranks: Tally[]): AgentDecision {
 }
 
 function examine(v: AgentView, r: Rng, ranks: Tally[]): AgentDecision {
+  const V = v.vocab;
   const c = v.context, d = v.record!, T = v.me.traits, pros = v.me.role === 'prosecutor', def = d.defendant!, w = c.witness, n = c.askedSoFar.length;
   const adm = d.exhibits.filter((e) => e.status === 'admitted');
   const out = (act: any, th: string): AgentDecision => ({ thought: th, action: act });
@@ -377,8 +376,8 @@ function examine(v: AgentView, r: Rng, ranks: Tally[]): AgentDecision {
         if (T.aggression > 0.7 && r() < 0.3) return out({ type: 'ask', topic: f.topic, text: `You know all about ${lab}, and you told the police exactly that, didn't you?` }, 'Hurry them to the point.');
         return out({ type: 'ask', topic: f.topic, text: pick(r, [`Please tell the jury, in your own words, what you know about ${lab}.`, `I want to ask you about ${lab}. What did you yourself see or hear?`]) }, `Bring out ${f.id} through this witness.`);
       }
-      if (w.seat === def && n === 0) return out({ type: 'ask', topic: `${def}.whereabouts`, text: `Tell the jury, plainly, where you were when ${surname(v.victim.name)} died.` }, 'Let my client give their account.');
-      if (n === 0) return out({ type: 'ask', topic: 'observations', text: `What did you see or hear that night that you think this jury should know?` }, 'Open question; see what they give.');
+      if (w.seat === def && n === 0) return out({ type: 'ask', topic: `${def}.whereabouts`, text: `Tell the jury, plainly, where you were ${V.window}.` }, 'Let my client give their account.');
+      if (n === 0) return out({ type: 'ask', topic: 'observations', text: `What did you see or hear at the time that you think this jury should know?` }, 'Open question; see what they give.');
       return out({ type: 'no_further_questions' }, 'I have what I called them for.');
     }
     const ex = adm.filter((e) => e.points.some(helps) && !asked(e.title) && (w.seat === 'detective' || e.analyses.some((a) => a.status === 'done')))[0];
@@ -425,7 +424,7 @@ function deliberate(v: AgentView, r: Rng): AgentDecision {
     notes.push({ text: `${t.witness}'s evidence (${lc(strip(p.note))})`, w: p.exculpatory ? -w : w });
     if (t.witnessImpeached) doubts.push(`${t.witness} was caught out on their own account`);
   }
-  const alt = d.argued?.defense?.alt, needMotive = d.charge === 'Murder';
+  const alt = d.argued?.defense?.alt, needMotive = (d.chargeElements || []).includes('motive');
   const score = Math.min(6, el.motive) + Math.min(6, el.opportunity) + Math.min(6, el.identity) - 1.5 * el.exculp;
   const bar = 6.5 + 3.6 * T.skepticism + (alt ? 0.8 : 0);
   const gaps = [needMotive && el.motive < 2 ? 'motive' : '', el.opportunity < 2 ? 'opportunity' : '', el.identity < 2 ? 'anything tying the defendant to the act itself' : ''].filter(Boolean);

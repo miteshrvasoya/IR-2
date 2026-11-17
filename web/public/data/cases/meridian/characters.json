@@ -1,0 +1,97 @@
+[
+ {
+  "id": "mara",
+  "name": "Dr. Mara Quill",
+  "age": 44,
+  "occupation": "Deputy Director, Meridian Observatory",
+  "kind": "suspect",
+  "publicProfile": "Deputy director for nine years and administrator of the observatory's research grants. Composed, precise, widely expected to succeed Voss.",
+  "persona": "Controlled and articulate; answers questions exactly as asked and volunteers nothing. Under real pressure she turns cold and legalistic rather than emotional. She has spent a decade being the competent one in the room and cannot bear to look foolish.",
+  "goals": "Avoid being charged. Keep the grant accounts out of the conversation. Point, politely, toward the people who quarrelled with Elias in public.",
+  "look": {
+   "skin": "#e0b89a",
+   "hair": "#2a1d18",
+   "hairStyle": "bun",
+   "outfit": "blazer",
+   "accent": "#7a1f33",
+   "build": 0.95
+  },
+  "actorStyle": "controlled"
+ },
+ {
+  "id": "theo",
+  "name": "Theo Lark",
+  "age": 27,
+  "occupation": "Doctoral student, Meridian Observatory",
+  "kind": "suspect",
+  "publicProfile": "Fourth-year PhD student and the telescope's most frequent night operator. Quick-tempered, overworked, argued with Voss in front of the guests.",
+  "persona": "Nervous, talkative, defensive; over-explains and then regrets it. Terrified of losing his degree. He is a bad liar and knows it, which makes him worse.",
+  "goals": "Avoid being charged \u2014 but almost as badly, avoid anyone learning what he was really doing in the control room, because it would end his career.",
+  "look": {
+   "skin": "#c98f6b",
+   "hair": "#3b2a1a",
+   "hairStyle": "messy",
+   "outfit": "hoodie",
+   "accent": "#3d6ea8",
+   "build": 0.9
+  },
+  "actorStyle": "nervous"
+ },
+ {
+  "id": "gideon",
+  "name": "Gideon Ashby",
+  "age": 63,
+  "occupation": "Chairman of the Board and principal donor",
+  "kind": "suspect",
+  "publicProfile": "Property magnate, chairman of the observatory's board, and its largest donor. Charming until crossed. Left the gala early.",
+  "persona": "Expansive, patronising, used to being believed. Treats the interview as a negotiation. Becomes clipped and threatening when his finances are mentioned.",
+  "goals": "Keep his name and his tax arrangements out of this. He did nothing to Voss and resents every minute of being asked.",
+  "look": {
+   "skin": "#eac3a6",
+   "hair": "#c9c9c9",
+   "hairStyle": "slick",
+   "outfit": "suit",
+   "accent": "#b08a3c",
+   "build": 1.12
+  },
+  "actorStyle": "expansive"
+ },
+ {
+  "id": "nell",
+  "name": "Nell Okafor",
+  "age": 51,
+  "occupation": "Night security officer",
+  "kind": "witness",
+  "publicProfile": "Night security at the observatory for six years. Found the body at 23:40 and raised the alarm.",
+  "persona": "Plain-spoken, proud of her record, protective of her job. Genuinely wants to help, but bristles at any suggestion she was not doing her rounds.",
+  "goals": "Help catch whoever did this \u2014 without admitting she spent much of the night watching a football match on her phone.",
+  "look": {
+   "skin": "#6b4630",
+   "hair": "#141414",
+   "hairStyle": "short",
+   "outfit": "uniform",
+   "accent": "#2f4a6b",
+   "build": 1.05
+  },
+  "actorStyle": "plain"
+ },
+ {
+  "id": "ivo",
+  "name": "Ivo Brandt",
+  "age": 35,
+  "occupation": "Caterer",
+  "kind": "witness",
+  "publicProfile": "Owner of the catering firm hired for the gala. Worked the service corridor behind the hall all evening.",
+  "persona": "Chatty, a gossip, enjoys the attention. Holds a grudge against Gideon Ashby over an unpaid invoice and is a little too keen to mention him.",
+  "goals": "Be helpful and interesting \u2014 but not explain why he was loitering on the service stairs (he was helping himself to the leftover champagne).",
+  "look": {
+   "skin": "#d9a37e",
+   "hair": "#5a3a22",
+   "hairStyle": "short",
+   "outfit": "apron",
+   "accent": "#e8e4da",
+   "build": 1.0
+  },
+  "actorStyle": "chatty"
+ }
+]

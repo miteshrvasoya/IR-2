@@ -1,7 +1,8 @@
 // The spectator theater: plays a case's public event stream through the 3D stage, live or as a replay.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api, useAuth } from './api';
+import { Link, useLocation } from 'react-router-dom';
+import * as local from './local';
+import { settlePredictions, earlyPhase } from './live';
 import { Stage } from './three/stage';
 import { PHASES, PHASE_LABEL, SCENE_LABEL, DIM_LABEL, type SimEvent, type SceneId, type Phase } from '../../shared/types';
 
@@ -17,11 +18,23 @@ function Typed({ text, ms }: { text: string; ms: number }) {
 }
 export const Avatar = ({ look, size = 44 }: { look: any; size?: number }) => <span className="avatar" style={{ width: size, height: size, background: look?.accent || '#333', ['--skin' as any]: look?.skin || '#caa', ['--hair' as any]: look?.hair || '#222' }} />;
 
-export function Theater({ id, detail, reload }: { id: string; detail: any; reload: () => void }) {
-  const { me, ensureGuest, refresh } = useAuth();
+/** Where the theater's events come from: a recorded JSON run, or a case running live in this browser. */
+export interface TheaterSource {
+  kind: 'replay' | 'live'; id: string;
+  events: () => SimEvent[];
+  subscribe?: (f: (evs: SimEvent[]) => void) => () => void;
+  control?: (action: 'pause' | 'resume') => void;
+  mind?: (seat: string) => any;
+  reconnect?: (seat: string) => void;
+  refresh: () => void;
+}
+
+export function Theater({ id, detail, source, onEnded, channel }: { id: string; detail: any; source: TheaterSource; onEnded?: () => void; channel?: string }) {
+  const reload = source.refresh, loc = useLocation();
+  const me = local.useLocal(local.profile), preds = local.useLocal(() => local.loadPreds(id));
   const host = useRef<HTMLDivElement>(null), stage = useRef<Stage | null>(null);
   const evs = useRef<SimEvent[]>([]), cur = useRef(0), gen = useRef(0), paused = useRef(false), rate = useRef(1);
-  const finished = detail.state.status === 'finished', live = !finished;
+  const live = source.kind === 'live', finished = !live;
   const [, setTick] = useState(0), bump = () => setTick((x) => x + 1);
   const [sub, setSub] = useState<{ e: SimEvent; narr: boolean } | null>(null);
   const [banner, setBanner] = useState<{ big: string; small?: string; tone: string; k: number } | null>(null);
@@ -49,26 +62,23 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
     if (e.type === 'evidence_status' && d.status !== 'admitted') show(d.status === 'suppressed' ? 'Suppressed' : 'Excluded', 'red', e.text);
     if (e.type === 'verdict') show(d.kind === 'convicted' ? 'Guilty' : d.kind === 'acquitted' ? 'Not guilty' : 'Hung jury', d.kind === 'convicted' ? 'red' : d.kind === 'acquitted' ? 'green' : 'white', e.text);
     if (e.type === 'reveal') { show('The truth', 'amber', `${d.culpritName} was responsible.`); setTimeout(() => { setShowResult(true); }, 5000 / rate.current); }
-    if (e.type === 'closed') reload();
+    if (e.type === 'closed') { reload(); if (onEnded) setTimeout(onEnded, 15000 / rate.current); }
   };
 
   // ---- boot: stage, history, live stream, playback loop ----
   useEffect(() => {
-    let alive = true, es: EventSource | null = null, st: Stage;
+    let alive = true, off: (() => void) | undefined, st: Stage;
     try { st = new Stage(host.current!); } catch { setWebgl(false); st = null as any; }
-    stage.current = st; if (st) { st.onFade = setFade; st.setCast(detail.state.seats, detail.state.defendant); }
+    stage.current = st; if (st) { st.onFade = setFade; st.setCase(detail.case); st.setCast(detail.state.seats, detail.state.defendant); }
     (async () => {
-      const list: SimEvent[] = await api(`/sessions/${id}/events?after=0`);
+      const list: SimEvent[] = source.events().slice();
       if (!alive) return;
       evs.current = list;
-      const t = Number(new URLSearchParams(location.search).get('t') || 0);
+      const t = Number(new URLSearchParams(loc.search).get('t') || 0);
       const startAt = finished ? (t ? Math.max(0, list.findIndex((e) => e.seq >= t)) : 0) : list.length;
       for (let i = 0; i < startAt; i++) st?.apply(list[i], true);
       cur.current = startAt; bump();
-      if (live) {
-        es = new EventSource(`/api/sessions/${id}/stream?after=${list.length ? list[list.length - 1].seq : 0}`);
-        es.onmessage = (m) => { const e = JSON.parse(m.data) as SimEvent; if (!evs.current.length || e.seq > evs.current[evs.current.length - 1].seq) evs.current.push(e); };
-      }
+      if (live && source.subscribe) off = source.subscribe((fresh) => { for (const e of fresh) if (!evs.current.length || e.seq > evs.current[evs.current.length - 1].seq) evs.current.push(e); });
       while (alive) {
         if (paused.current || cur.current >= evs.current.length) { await sleep(100); continue; }
         const g = gen.current, e = evs.current[cur.current++], backlog = evs.current.length - cur.current;
@@ -78,12 +88,12 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
         if (!instant && hold > 0) { const end = Date.now() + hold; while (alive && Date.now() < end && gen.current === g && !(paused.current && !live)) await sleep(60); }
       }
     })().catch((e) => setErr(e.message));
-    return () => { alive = false; es?.close(); st?.dispose(); };
+    return () => { alive = false; off?.(); st?.dispose(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, finished]);
   useEffect(() => { stage.current?.setCast(detail.state.seats, detail.state.defendant); }, [detail]);
   useEffect(() => { stage.current?.setInset(open ? 384 : 0); }, [open]);
-  useEffect(() => { if (!live) return; const t = setInterval(reload, 7000); return () => clearInterval(t); }, [live, reload]);
+  useEffect(() => { if (!live) return; const t = setInterval(reload, 3000); return () => clearInterval(t); }, [live, reload]);
 
   const seek = (i: number) => { gen.current++; const st = stage.current; st?.reset(); for (let k = 0; k < i; k++) st?.apply(evs.current[k], true); cur.current = i; setSub(null); setBanner(null); setShowResult(false); bump(); };
 
@@ -92,7 +102,7 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
   const view = useMemo(() => {
     let phase: Phase = 'lobby', scene: SceneId = 'office', defendant: string | null = null;
     const found: string[] = [], status: Record<string, string> = {}, analyses = new Set<string>(), scores: Record<string, { total: number; entries: any[] }> = {}, caught: Record<string, number> = {};
-    let reveal: any = null, awards: any = null;
+    let reveal: any = null, awards: any = null, closedAnswers: any = null;
     for (const e of seen) {
       const d = e.data || {};
       if (e.type === 'phase') phase = d.phase; if (e.type === 'scene') scene = d.scene;
@@ -101,21 +111,31 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
       if (e.type === 'speech' && e.kind === 'offer') status[d.evidenceId] = 'offered';
       if (e.type === 'speech' && e.kind === 'lab_report') analyses.add(d.analysisId);
       if (e.type === 'speech' && e.kind === 'charge') defendant = d.suspect;
-      if (e.type === 'score' && e.actor) { const s = (scores[e.actor.seatId] ||= { total: 0, entries: [] }); s.total += d.delta; s.entries.push(d); }
+      if (e.type === 'score' && e.actor && (e.vis !== 'sealed' || reveal)) { const s = (scores[e.actor.seatId] ||= { total: 0, entries: [] }); s.total += d.delta; s.entries.push({ ...d, wasSealed: e.vis === 'sealed' }); }
       if (e.type === 'contradiction') caught[d.char] = (caught[d.char] || 0) + 1;
-      if (e.type === 'reveal') reveal = { ...d, summary: e.text }; if (e.type === 'awards') awards = d;
+      if (e.type === 'reveal') { reveal = { ...d, summary: e.text }; for (const x of seen) if (x.type === 'score' && x.vis === 'sealed' && x.actor) { const s2 = (scores[x.actor.seatId] ||= { total: 0, entries: [] }); s2.total += x.data.delta; s2.entries.push({ ...x.data, wasSealed: true }); } } if (e.type === 'awards') awards = d; if (e.type === 'closed') closedAnswers = d.answers;
     }
-    return { phase, scene, defendant, found, status, analyses, scores, caught, reveal, awards, log: seen.filter((e) => LOGGED.has(e.type) && e.text) };
+    return { phase, scene, defendant, found, status, analyses, scores, caught, reveal, awards, closedAnswers, log: seen.filter((e) => LOGGED.has(e.type) && e.text) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n]);
+  // The moment the viewer sees the reveal (by playing or by seeking), their calls are settled and betting closes.
+  const answers = view.reveal ? (detail.result?.answers || view.closedAnswers) : null;
+  useEffect(() => { if (answers) settlePredictions(id, detail.markets, answers); }, [!!answers]);
   useEffect(() => { const el = logEnd.current?.parentElement; if (tab === 'log' && el) el.scrollTop = el.scrollHeight; }, [n, tab]);
 
   const seats: any[] = detail.state.seats, seatOf = (sid: string) => seats.find((s) => s.id === sid);
-  const act = async (fn: () => Promise<any>) => { try { setErr(''); await fn(); reload(); } catch (e: any) { setErr(e.message); } };
-  const predict = (marketId: string, choice: string) => act(async () => { await ensureGuest(); await api(`/sessions/${id}/predict`, { marketId, choice }); });
-  const flagSus = (seq: number) => act(async () => { await ensureGuest(); await api(`/sessions/${id}/sus`, { seq }); });
+  const act = (fn: () => void) => { try { setErr(''); fn(); reload(); } catch (e: any) { setErr(e.message); } };
+  const marketOpen = (m: any) => !view.reveal && !preds.settled && PHASES.indexOf(view.phase) < PHASES.indexOf(m.closesAtPhase) && view.phase !== 'lobby';
+  const predict = (marketId: string, choice: string) => act(() => {
+    const m = detail.markets.find((x: any) => x.id === marketId);
+    if (!m || !marketOpen(m)) throw new Error('That market has closed at this point in the case.');
+    const p = local.loadPreds(id);
+    if (p.settled) throw new Error('You have already seen how this one ends — predictions are closed.');
+    local.savePreds(id, { ...p, picks: [...p.picks.filter((x) => x.marketId !== marketId), { marketId, choice, phase: view.phase, early: earlyPhase(view.phase), at: new Date().toISOString() }] });
+  });
+  const flagSus = (seq: number) => act(() => { const p = local.loadPreds(id); if (!p.sus.includes(seq)) local.savePreds(id, { ...p, sus: [...p.sus, seq] }); });
   const phaseIdx = PHASES.indexOf(view.phase), marks = finished ? evs.current.map((e, i) => ({ e, i })).filter((x) => x.e.highlight && ['contradiction', 'verdict', 'charge', 'evidence', 'objection', 'reveal', 'suppressed'].includes(x.e.highlight)) : [];
-  const share = () => { const u = `${location.origin}/case/${id}?t=${evs.current[Math.max(0, cur.current - 1)]?.seq || 0}`; navigator.clipboard?.writeText(u); setErr('Link to this moment copied.'); setTimeout(() => setErr(''), 2500); };
+  const share = () => { const u = `${location.origin}${location.pathname}#/watch/${id}?t=${evs.current[Math.max(0, cur.current - 1)]?.seq || 0}`; navigator.clipboard?.writeText(u); setErr('Link to this moment copied.'); setTimeout(() => setErr(''), 2500); };
 
   return (
     <div className="theater">
@@ -125,12 +145,13 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
       <div className="letter t" /><div className="letter b" />
       <div className="hud-top">
         <Link to="/cases" className="btn sm ghost">← Cases</Link>
+        {channel && <span className="tag live">{channel}</span>}
         <h3>{detail.case.title}</h3>
         <span className={`tag ${live ? 'live' : 'amber'}`}>{live ? (detail.state.status === 'paused' ? 'Paused' : '● Live') : 'Replay'}</span>
         <div className="steps" title={PHASE_LABEL[view.phase]}>{PHASES.slice(1, -1).map((p, i) => <i key={p} className={i + 1 < phaseIdx ? 'done' : i + 1 === phaseIdx ? 'cur' : ''} />)}</div>
         <span className="tag">{PHASE_LABEL[view.phase]}</span><span className="tag blue">{SCENE_LABEL[(tour as SceneId) || view.scene]}</span>
         <span style={{ flex: 1 }} />
-        {live && <span className="faint mono">{detail.watchers} watching · {detail.state.hoursLeft}h of inquiry left</span>}
+        {live && <span className="faint mono">running in this browser · {detail.state.hoursLeft}h of inquiry left</span>}
         <button className="btn sm" onClick={() => setOpen(!open)}>{open ? 'Hide panel' : 'Show panel'}</button>
       </div>
 
@@ -156,7 +177,7 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
           <button className="btn" onClick={share}>Share this moment</button>
           <button className="btn" onClick={() => setShowResult(!showResult)}>{showResult ? 'Hide' : 'Show'} case file</button>
         </>}
-        {live && detail.isHost && <button className="btn" onClick={() => act(() => api(`/sessions/${id}/control`, { action: detail.state.status === 'paused' ? 'resume' : 'pause' }))}>{detail.state.status === 'paused' ? 'Resume case' : 'Pause case'}</button>}
+        {live && source.control && <button className="btn" onClick={() => act(() => source.control!(detail.state.status === 'paused' ? 'resume' : 'pause'))}>{detail.state.status === 'paused' ? 'Resume case' : 'Pause case'}</button>}
         {err && <span className="tag amber">{err}</span>}
       </div>
       {finished && (
@@ -166,7 +187,7 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
         </div>
       )}
 
-      {showResult && view.reveal && <ResultPanel detail={detail} reveal={view.reveal} awards={view.awards} seats={seats} onClose={() => setShowResult(false)} me={me} />}
+      {showResult && view.reveal && <ResultPanel detail={detail} reveal={view.reveal} awards={view.awards} seats={seats} onClose={() => setShowResult(false)} me={me} preds={preds} />}
 
       <div className={`drawer ${open ? '' : 'closed'}`}>
         <div className="tabs">{[['log', 'Case log'], ['evidence', `Evidence ${view.found.length}`], ['cast', 'Cast'], ['predict', 'Predict']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
@@ -174,7 +195,7 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
           {tab === 'log' && <>
             {view.log.slice(-160).map((e) => (
               <div key={e.seq} className={`logline ${e.type !== 'speech' ? 'sys' : ''} ${e.highlight ? 'hl' : ''} ${e.type === 'contradiction' || e.highlight === 'suppressed' ? 'bad' : ''}`}>
-                {e.type === 'speech' && e.actor && <div className="n">{e.actor.name}<em>{KIND[e.kind || ''] || ROLE[e.actor.role]}</em>{live && <button className="sus" title="Flag as suspicious" onClick={() => flagSus(e.seq)}>sus {detail.sus[e.seq] || ''}</button>}</div>}
+                {e.type === 'speech' && e.actor && <div className="n">{e.actor.name}<em>{KIND[e.kind || ''] || ROLE[e.actor.role]}</em>{!view.reveal && <button className="sus" title="Flag as suspicious" onClick={() => flagSus(e.seq)}>{preds.sus.includes(e.seq) ? 'flagged' : 'sus?'}</button>}</div>}
                 {e.type === 'evidence' ? <><b className="amber">Evidence recovered · </b>{e.text}</> : e.text}
               </div>
             ))}
@@ -205,45 +226,38 @@ export function Theater({ id, detail, reload }: { id: string; detail: any; reloa
                 </div>
                 {openSeat === s.id && <div style={{ padding: '6px 10px' }}>
                   {(sc?.entries || []).map((x: any, i: number) => <div key={i} className="faint"><b className={x.delta < 0 ? 'red' : 'green'}>{x.delta > 0 ? '+' : ''}{x.delta}</b> {DIM_LABEL[x.dim]} — {x.reason}{x.wasSealed ? ' (sealed until reveal)' : ''}</div>)}
-                  {detail.mySeats.includes(s.id) && <button className="btn sm" style={{ marginTop: 6 }} onClick={() => api(`/sessions/${id}/mind/${s.id}`).then(setMind).catch((e) => setErr(e.message))}>Read my agent's private mind</button>}
-                  {detail.mySeats.includes(s.id) && live && <button className="btn sm" style={{ margin: '6px 0 0 6px' }} onClick={() => act(() => api(`/sessions/${id}/reconnect`, { seatId: s.id }))}>Reconnect model</button>}
-                  {live && s.house && me && !me.guest && <JoinLate id={id} seatId={s.id} reload={reload} setErr={setErr} />}
+                  {detail.mySeats.includes(s.id) && <button className="btn sm" style={{ marginTop: 6 }} onClick={() => setMind(source.mind?.(s.id))}>Read my agent's private mind</button>}
+                  {detail.mySeats.includes(s.id) && live && source.reconnect && <button className="btn sm" style={{ margin: '6px 0 0 6px' }} onClick={() => act(() => source.reconnect!(s.id))}>Reconnect model</button>}
                 </div>}
               </div>
             ); })}
           </>}
           {tab === 'predict' && <>
-            <p className="faint">Virtual points only. Calls made before the charging decision pay 1.5×. {me ? <>You have <b className="amber">{me.points}</b> points.</> : 'Pick an option to start as a guest.'}{!detail.canPredict && me ? ' Participants cannot bet on their own case.' : ''}</p>
-            {detail.markets.map((m: any) => { const mine = detail.myPredictions.find((p: any) => p.marketId === m.id); const total = Object.values(m.picks as Record<string, number>).reduce((a, b) => a + b, 0) || 1; return (
+            <p className="faint">Virtual points only, kept in this browser. Calls made before the charging decision pay 1.5×. You have <b className="amber">{me.points}</b> points.{finished && !view.reveal ? ' This is a recording: markets stay open until the case reaches the point where they close.' : ''}</p>
+            {detail.markets.map((m: any) => { const mine = preds.picks.find((p) => p.marketId === m.id), open = marketOpen(m), answer = view.reveal ? (detail.result?.answers?.[m.id] ?? m.answer) : undefined; return (
               <div className="ev" key={m.id}>
-                <div className="row between"><h4>{m.question}</h4><span className={`tag ${m.status === 'open' ? 'green' : ''}`}>{m.status === 'open' ? `${m.points} pts` : m.status}</span></div>
+                <div className="row between"><h4>{m.question}</h4><span className={`tag ${open ? 'green' : ''}`}>{open ? `${m.points} pts` : view.reveal ? 'settled' : 'closed'}</span></div>
                 {m.options.map((o: any) => (
-                  <button key={o.id} disabled={m.status !== 'open' || (!!me && !detail.canPredict)} onClick={() => predict(m.id, o.id)} className="btn sm" style={{ display: 'block', width: '100%', textAlign: 'left', marginTop: 6, textTransform: 'none', letterSpacing: 0, fontSize: 13, borderColor: mine?.choice === o.id ? 'var(--amber)' : m.answer === o.id ? 'var(--green)' : undefined, background: `linear-gradient(90deg, rgba(224,168,74,.16) ${(m.picks[o.id] / total) * 100}%, transparent 0)` }}>
-                    {o.label}{mine?.choice === o.id ? ' · your call' : ''}{m.answer === o.id ? ' ✓' : ''}<span style={{ float: 'right' }} className="faint">{m.picks[o.id]}</span>
+                  <button key={o.id} disabled={!open} onClick={() => predict(m.id, o.id)} className="btn sm" style={{ display: 'block', width: '100%', textAlign: 'left', marginTop: 6, textTransform: 'none', letterSpacing: 0, fontSize: 13, borderColor: mine?.choice === o.id ? 'var(--amber)' : answer === o.id ? 'var(--green)' : undefined }}>
+                    {o.label}{mine?.choice === o.id ? ' · your call' : ''}{answer === o.id ? ' ✓' : ''}
                   </button>
                 ))}
-                {mine?.won !== undefined && <div className={mine.won ? 'green' : 'red'} style={{ marginTop: 6 }}>{mine.won ? `Correct — +${mine.awarded} points` : 'Wrong call'}</div>}
+                {mine && answer !== undefined && <div className={mine.choice === answer ? 'green' : 'red'} style={{ marginTop: 6 }}>{mine.choice === answer ? `Correct — +${Math.round(m.points * (mine.early ? 1.5 : 1))} points` : 'Wrong call'}</div>}
               </div>
             ); })}
             {!detail.markets.length && <p className="dim">Markets open when the case starts.</p>}
           </>}
         </div>
       </div>
-      {mind && <div className="modal" onClick={() => setMind(null)}><div className="card" onClick={(e) => e.stopPropagation()}><span className="eyebrow">Private — only you can see this</span><h2>Your agent's mind</h2>{mind.memory.theory && <p><b>Working theory:</b> {mind.memory.theory.summary} <span className="faint">(confidence {Math.round(mind.memory.theory.confidence * 100)}%)</span></p>}<h3>Recent reasoning</h3>{mind.thoughts.slice(-14).map((t: any) => <div className="logline" key={t.seq}><span className="faint mono">{t.phase}</span> {t.text}</div>)}<h3 style={{ marginTop: 14 }}>Memory notes</h3>{mind.memory.notes.slice(-12).map((x: string, i: number) => <div className="faint" key={i}>• {x}</div>)}<button className="btn" style={{ marginTop: 14 }} onClick={() => { setMind(null); refresh(); }}>Close</button></div></div>}
+      {mind && mind.memory && <div className="modal" onClick={() => setMind(null)}><div className="card" onClick={(e) => e.stopPropagation()}><span className="eyebrow">Private — only you can see this</span><h2>Your agent's mind</h2>{mind.memory.theory && <p><b>Working theory:</b> {mind.memory.theory.summary} <span className="faint">(confidence {Math.round(mind.memory.theory.confidence * 100)}%)</span></p>}<h3>Recent reasoning</h3>{mind.thoughts.slice(-14).map((t: any) => <div className="logline" key={t.seq}><span className="faint mono">{t.phase}</span> {t.text}</div>)}<h3 style={{ marginTop: 14 }}>Memory notes</h3>{mind.memory.notes.slice(-12).map((x: string, i: number) => <div className="faint" key={i}>• {x}</div>)}<button className="btn" style={{ marginTop: 14 }} onClick={() => setMind(null)}>Close</button></div></div>}
     </div>
   );
 }
 
-function JoinLate({ id, seatId, reload, setErr }: any) {
-  const [agents, setAgents] = useState<any[] | null>(null);
-  if (!agents) return <button className="btn sm" style={{ marginTop: 6 }} onClick={() => api('/agents').then((a) => setAgents(a.filter((x: any) => x.mine)))}>Take this seat (late join)</button>;
-  return <div className="row" style={{ marginTop: 6 }}>{agents.length ? agents.map((a) => <button key={a.id} className="btn sm" onClick={() => api(`/sessions/${id}/join`, { seatId, agentId: a.id }).then(reload).catch((e) => setErr(e.message))}>{a.name}</button>) : <span className="faint">Create an agent first.</span>}</div>;
-}
-
-function ResultPanel({ detail, reveal, awards, seats, onClose, me }: any) {
+function ResultPanel({ detail, reveal, awards, seats, onClose, me, preds }: any) {
   const r = detail.result, o = reveal.outcome, totals = r?.totals || {};
   const ranked = seats.map((s: any) => ({ s, t: totals[s.id]?.total ?? 0 })).sort((a: any, b: any) => b.t - a.t);
-  const mine = detail.myPredictions || [];
+  const mine = (preds?.picks || []).map((p: any) => { const ans = detail.result?.answers?.[p.marketId], m = detail.markets.find((x: any) => x.id === p.marketId); return { ...p, won: ans === p.choice, awarded: ans === p.choice ? Math.round((m?.points || 0) * (p.early ? 1.5 : 1)) : 0 }; });
   return (
     <div className="result">
       <div className="row between"><span className="eyebrow">Case file — unsealed</span><button className="btn sm" onClick={onClose}>Close</button></div>

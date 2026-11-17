@@ -1,8 +1,5 @@
-// Loads and validates authored case definitions (static JSON under data/cases/<id>/).
-import fs from 'node:fs';
-import path from 'node:path';
-import { config } from './config.ts';
-import { readJsonSync } from './store.ts';
+// Assembles and validates an authored case from its JSON files (web/public/data/cases/<id>/).
+// Isomorphic: the browser fetches the files, the Node scripts read them from disk; both call buildBundle.
 import type { CaseDef, CharacterDef, EvidenceDef, FactDef, LeadDef, TruthDef, AnalysisDef } from '../shared/types.ts';
 
 export interface CaseBundle {
@@ -11,15 +8,15 @@ export interface CaseBundle {
   analyses: Record<string, AnalysisDef & { evidenceId: string }>;
 }
 
-const cache = new Map<string, CaseBundle>();
 const byId = <T extends { id: string }>(list: T[]) => Object.fromEntries(list.map((x) => [x.id, x])) as Record<string, T>;
 
-function load(id: string): CaseBundle {
-  const dir = path.join(config.casesDir, id);
-  const r = <T>(f: string) => readJsonSync<T>(path.join(dir, f));
+export const CASE_FILES = ['case.json', 'characters.json', 'facts.json', 'evidence.json', 'leads.json', 'truth.json'] as const;
+export type RawCase = Record<(typeof CASE_FILES)[number], any>;
+
+export function buildBundle(raw: RawCase): CaseBundle {
   const b: CaseBundle = {
-    def: r<CaseDef>('case.json'), characters: byId(r<CharacterDef[]>('characters.json')), facts: byId(r<FactDef[]>('facts.json')),
-    evidence: byId(r<EvidenceDef[]>('evidence.json')), leads: byId(r<LeadDef[]>('leads.json')), truth: r<TruthDef>('truth.json'), analyses: {},
+    def: raw['case.json'], characters: byId(raw['characters.json']), facts: byId(raw['facts.json']),
+    evidence: byId(raw['evidence.json']), leads: byId(raw['leads.json']), truth: raw['truth.json'], analyses: {},
   };
   for (const e of Object.values(b.evidence)) for (const a of e.analyses) b.analyses[a.id] = { ...a, evidenceId: e.id };
   validate(b);
@@ -43,15 +40,6 @@ function validate(b: CaseBundle) {
   const reachable = new Set(Object.values(b.leads).flatMap((l) => l.yields.evidence || []));
   for (const e of Object.keys(b.evidence)) if (!reachable.has(e)) errs.push(`${e}: no lead yields this evidence`);
   if (errs.length) throw new Error(`case ${b.def.id} invalid:\n  ` + errs.join('\n  '));
-}
-
-export function getCase(id: string): CaseBundle {
-  if (!/^[a-z0-9_-]+$/.test(id)) throw new Error('bad case id');
-  if (!cache.has(id)) cache.set(id, load(id));
-  return cache.get(id)!;
-}
-export function listCases(): CaseBundle[] {
-  return fs.readdirSync(config.casesDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => getCase(d.name));
 }
 
 /** Everything about a case that is safe to show anyone before it starts. */

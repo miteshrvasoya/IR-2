@@ -644,7 +644,7 @@ function investigate(sim: Sim, seat: string, a: any) {
       break;
     }
     case 'submit_report': {
-      if (st.leadsDone.length < 3 && st.hoursLeft > 4) fail('It is far too early to close the investigation: follow more leads first.');
+      if (st.leadsDone.length < 3 && st.hoursLeft > 4 && Object.keys(sim.b.leads).some((l) => leadAvailable(sim, l) && sim.b.leads[l].hours <= st.hoursLeft)) fail('It is far too early to close the investigation: follow more leads first.');
       const rec = sim.b.characters[a.recommended]?.kind === 'suspect' ? a.recommended : null;
       st.report = { recommended: rec, summary: clean(a.summary, 1200) };
       sim.scene('office', ['detective', 'prosecutor']);
@@ -692,5 +692,8 @@ function answer(sim: Sim, seat: string, a: any, d: any) {
 export function safeDefault(sim: Sim, turn: Turn): AgentDecision | null {
   const o = describe(sim, turn).options.map((x) => x.type);
   for (const t of ['no_objection', 'no_motions', 'no_further_questions', 'end_interview', 'wait', 'rest']) if (o.includes(t)) return { thought: '(no valid action produced; procedural default)', action: { type: t } };
+  const spec = describe(sim, turn), lead = spec.options.find((x) => x.type === 'pursue_lead')?.choices?.leadId?.[0];
+  if (lead) return { thought: '(no valid action produced; procedural default)', action: { type: 'pursue_lead', leadId: lead.id } };
+  if (o.includes('submit_report')) return { thought: '(procedural default)', action: { type: 'submit_report', recommended: null, summary: 'The investigation is closed without a recommendation.' } };
   return null;
 }

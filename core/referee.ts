@@ -2,10 +2,8 @@
 // (In-case scoring happens at the point each action is validated, in engine.ts, through sim.score: every
 // entry names one dimension and a plain-language reason. Nothing here or there rewards volume of speech.)
 import type { Sim } from './sim.ts';
-import type { Market, Phase } from '../shared/types.ts';
+import type { AgentStats, Market, Phase } from '../shared/types.ts';
 import { PHASES } from '../shared/types.ts';
-import { writeJson } from './store.ts';
-import { getAgent, updateAgent, updateUser } from './accounts.ts';
 
 const idx = (p: Phase) => PHASES.indexOf(p);
 
@@ -16,7 +14,7 @@ export function openMarkets(sim: Sim) {
   const pros = ['detective', 'forensic', 'prosecutor', 'defense', 'judge'].map((s) => ({ id: s, label: `${sim.nameOf(s)} (${sim.role(s)})` }));
   const m = (id: string, question: string, options: Market['options'], closesAtPhase: Phase, points: number): Market => ({ id, question, options, closesAtPhase, points, status: 'open' });
   sim.preds.markets = [
-    m('culprit', 'Who is actually responsible for the death?', sus, 'pretrial', 150),
+    m('culprit', sim.b.def.vocab.responsibleQuestion, sus, 'pretrial', 150),
     m('charged', 'Who will the prosecutor charge?', [...sus, { id: 'nobody', label: 'Nobody' }], 'charging', 100),
     m('caught', 'Who will be caught in the most contradictions?', [...all, { id: 'nobody', label: 'Nobody' }], 'pretrial', 80),
     m('suppressed', 'Will any evidence be suppressed or excluded?', [{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }], 'opening', 60),
@@ -120,51 +118,44 @@ export function finalize(sim: Sim) {
 
   const final = totals(sim);
   (st as any).result = { awards, stats, answers, totals: final };
-  sim.emit('closed', { text: 'Case closed.', data: { totals: final }, ms: 3000 });
+  sim.emit('closed', { text: 'Case closed.', data: { totals: final, answers }, ms: 3000 });
   st.phase = 'closed'; st.status = 'finished'; st.finishedAt = new Date().toISOString(); st.queue = [];
 }
 
-/** Write the durable consequences of a finished case: result.json, agent careers, spectator points. Idempotent. */
-export async function commitResults(sim: Sim) {
-  const st = sim.st as any;
-  if (st.status !== 'finished' || st.committed) return;
-  const res = st.result, o = st.outcome, culprit = sim.b.truth.culprit, now = new Date().toISOString();
-  await writeJson(sim.dir('result.json'), { sessionId: sim.id, caseId: st.caseId, title: st.title, finishedAt: st.finishedAt, outcome: o, defendant: st.defendant, charge: st.charge, truth: sim.b.truth, ...res, scores: sim.scores, predictions: sim.preds });
-  const count = (seat: string, re: RegExp) => sim.scores.filter((e) => e.seatId === seat && re.test(e.reason)).length;
-  for (const d of sim.b.def.seats) {
-    const seat = st.seats[d.id]; if (!seat.agentId || !(await getAgent(seat.agentId))) continue;
-    const t = res.totals[d.id], mine = res.awards.filter((a: any) => a.seat === d.id);
-    const won = d.role === 'prosecutor' ? (o.kind === 'convicted' || o.kind === 'plea') : d.role === 'defense' ? (st.defendant ? o.kind === 'acquitted' || o.kind === 'hung' : null) : d.role === 'detective' ? st.report?.recommended === culprit : null;
-    await updateAgent(seat.agentId, (a) => {
-      const s = a.stats; s.cases++; s.xp += 20 + Math.max(0, t.total) * 2;
-      s.rating = Math.round(s.rating + Math.max(-40, Math.min(40, (t.total - 6) * 1.5)));
-      if (won === true) s.wins++; if (won === false) s.losses++;
-      const r = (s.byRole[d.role] ||= { cases: 0, avgScore: 0 }); r.avgScore = Math.round(((r.avgScore * r.cases + t.total) / (r.cases + 1)) * 10) / 10; r.cases++;
-      for (const [k, v] of Object.entries(t.dims as Record<string, number>)) s.dims[k] = (s.dims[k] || 0) + v;
-      s.objectionsWon += count(d.id, /^Objection sustained/); s.contradictions += count(d.id, /^Exposed a contradiction/); s.evidenceFound += count(d.id, /^Recovered /);
-      s.history.unshift({ sessionId: sim.id, caseTitle: st.title, role: d.role, score: t.total, outcome: o.kind, at: now, awards: mine.map((m: any) => m.label) });
-      s.history = s.history.slice(0, 30);
-      for (const m of mine) s.achievements.push({ id: m.id, label: m.label, at: now, sessionId: sim.id });
-      if (s.cases === 1) s.achievements.push({ id: 'first_case', label: 'First Case', at: now, sessionId: sim.id });
-      if (s.cases === 5) s.achievements.push({ id: 'veteran', label: 'Five-Case Veteran', at: now });
-      s.achievements = s.achievements.slice(-40);
-    });
-  }
-  const byUser: Record<string, typeof sim.preds.entries> = {};
-  for (const p of sim.preds.entries) (byUser[p.userId] ||= []).push(p);
-  for (const [uid, list] of Object.entries(byUser)) {
-    const right = list.filter((p) => p.won).length, gain = list.reduce((n, p) => n + (p.awarded || 0), 0);
-    await updateUser(uid, (u) => {
-      u.points += gain; u.total += list.length; u.correct += right;
-      u.streak = right * 2 >= list.length && right > 0 ? u.streak + 1 : 0; u.bestStreak = Math.max(u.bestStreak, u.streak);
-      const ach = (id: string, label: string) => { if (!u.achievements.some((a) => a.id === id)) u.achievements.push({ id, label, at: now }); };
-      if (right) ach('first_call', 'First Correct Call');
-      if (right === list.length && list.length >= 4) ach('oracle', 'Oracle: a perfect card');
-      if (list.some((p) => p.marketId === 'culprit' && p.won)) ach('sleuth', 'Armchair Sleuth');
-      if (u.streak >= 3) ach('hot_streak', 'Hot Streak');
-    }).catch(() => {});
-  }
-  st.committed = true;
-  await writeJson(sim.dir('predictions.json'), sim.preds);
-  await writeJson(sim.dir('state.json'), sim.st, true);
+/** Fold one finished case into an agent's career record (mutates and returns `s`). Pure: no I/O. */
+export function applyCareer(sim: Sim, seatId: string, s: AgentStats, now = new Date().toISOString()): AgentStats {
+  const st = sim.st as any, res = st.result, o = st.outcome, culprit = sim.b.truth.culprit, d = sim.seatDef(seatId);
+  const count = (re: RegExp) => sim.scores.filter((e) => e.seatId === seatId && re.test(e.reason)).length;
+  const t = res.totals[seatId], mine = res.awards.filter((a: any) => a.seat === seatId);
+  const won = d.role === 'prosecutor' ? (o.kind === 'convicted' || o.kind === 'plea') : d.role === 'defense' ? (st.defendant ? o.kind === 'acquitted' || o.kind === 'hung' : null) : d.role === 'detective' ? st.report?.recommended === culprit : null;
+  s.cases++; s.xp += 20 + Math.max(0, t.total) * 2;
+  s.rating = Math.round(s.rating + Math.max(-40, Math.min(40, (t.total - 6) * 1.5)));
+  if (won === true) s.wins++; if (won === false) s.losses++;
+  const r = (s.byRole[d.role] ||= { cases: 0, avgScore: 0 }); r.avgScore = Math.round(((r.avgScore * r.cases + t.total) / (r.cases + 1)) * 10) / 10; r.cases++;
+  for (const [k, v] of Object.entries(t.dims as Record<string, number>)) s.dims[k] = (s.dims[k] || 0) + v;
+  s.objectionsWon += count(/^Objection sustained/); s.contradictions += count(/^Exposed a contradiction/); s.evidenceFound += count(/^Recovered /);
+  s.history.unshift({ sessionId: sim.id, caseTitle: st.title, role: d.role, score: t.total, outcome: o.kind, at: now, awards: mine.map((m: any) => m.label) });
+  s.history = s.history.slice(0, 30);
+  for (const m of mine) s.achievements.push({ id: m.id, label: m.label, at: now, sessionId: sim.id });
+  if (s.cases === 1) s.achievements.push({ id: 'first_case', label: 'First Case', at: now, sessionId: sim.id });
+  if (s.cases === 5) s.achievements.push({ id: 'veteran', label: 'Five-Case Veteran', at: now });
+  s.achievements = s.achievements.slice(-40);
+  return s;
+}
+
+export const emptyStats = (): AgentStats => ({ cases: 0, xp: 0, rating: 1200, wins: 0, losses: 0, byRole: {}, dims: {}, objectionsWon: 0, contradictions: 0, evidenceFound: 0, achievements: [], history: [] });
+
+export interface SpectatorRecord { points: number; streak: number; bestStreak: number; correct: number; total: number; achievements: { id: string; label: string; at: string }[] }
+/** Settle one case's predictions into a spectator record. `answers` maps market id to the right option. */
+export function applyPredictions(u: SpectatorRecord, picks: { marketId: string; choice: string; early: boolean }[], markets: Market[], answers: Record<string, string>, now = new Date().toISOString()) {
+  let right = 0, gain = 0;
+  for (const p of picks) { const m = markets.find((x) => x.id === p.marketId); if (!m) continue; if (answers[m.id] === p.choice) { right++; gain += Math.round(m.points * (p.early ? 1.5 : 1)); } }
+  u.points += gain; u.total += picks.length; u.correct += right;
+  u.streak = right * 2 >= picks.length && right > 0 ? u.streak + 1 : 0; u.bestStreak = Math.max(u.bestStreak, u.streak);
+  const ach = (id: string, label: string) => { if (!u.achievements.some((a) => a.id === id)) u.achievements.push({ id, label, at: now }); };
+  if (right) ach('first_call', 'First Correct Call');
+  if (right === picks.length && picks.length >= 4) ach('oracle', 'Oracle: a perfect card');
+  if (picks.some((p) => p.marketId === 'culprit' && answers.culprit === p.choice)) ach('sleuth', 'Armchair Sleuth');
+  if (u.streak >= 3) ach('hot_streak', 'Hot Streak');
+  return { right, gain };
 }

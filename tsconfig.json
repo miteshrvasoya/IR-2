@@ -5,5 +5,5 @@
     "allowImportingTsExtensions": true, "noEmit": true, "resolveJsonModule": true,
     "esModuleInterop": true, "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["node"]
   },
-  "include": ["shared", "server", "web/src", "scripts", "tests"]
+  "include": ["shared", "core", "web/src", "scripts", "tests"]
 }

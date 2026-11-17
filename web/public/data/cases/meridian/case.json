@@ -156,5 +156,30 @@
     "mara.camera": "who switched off the dome corridor camera",
     "override.cards": "who held the override keycards",
     "dome.fall": "how Voss came to fall"
+  },
+  "vocab": {
+    "timeline": "Dr. Elias Voss left the hall alive and was found dead a little over an hour later.",
+    "window": "between half past ten and midnight",
+    "windowStart": "from the moment Elias Voss left the hall until the alarm was raised",
+    "place": "the dome",
+    "scene": "that gantry",
+    "goal": "who wanted Elias Voss dead",
+    "harm": "a man is dead",
+    "forensicBrief": [
+      "Before anyone says \"fall\", let me read the floor. A stumble and a shove write completely different geometry \u2014 where he landed, how far out, what he was holding. Get me the scene untouched, his clothes, his hands, and anything electronic. The body will tell us which story is true.",
+      "I'll say this once: \"he fell\" is a conclusion, not an observation. I need the body position documented, the post-mortem ordered, and every exhibit sealed with continuity. Send me what you find and I'll tell you what it shows \u2014 and what it doesn't."
+    ],
+    "prosecutionOpening": [
+      "Dr. Elias Voss did not simply fall. Someone stood on that gantry with him, close enough to touch, and when it was over walked back to the party.",
+      "Dr. Elias Voss did not simply fall. The evidence will show that another person was on that gantry with him."
+    ],
+    "sentences": {
+      "murder": "For murder the sentence is life imprisonment; I set the minimum term at eighteen years.",
+      "manslaughter": "For manslaughter I sentence you to nine years' imprisonment."
+    },
+    "responsibleQuestion": "Who is actually responsible for the death?",
+    "crime": "the death of Dr. Elias Voss",
+    "victimShort": "Elias Voss",
+    "relationshipQuestion": "How were things between you and Elias Voss \u2014 that day in particular?"
   }
 }

@@ -1,0 +1,187 @@
+{
+  "id": "nightingale",
+  "version": 1,
+  "title": "The Nightingale Vanishes",
+  "tagline": "A jewelled clockwork bird sat in a locked vault all week. On appraisal night it turned out to be a fake. Someone switched it \u2014 but when?",
+  "type": "Art theft",
+  "difficulty": 4,
+  "setting": "The Ravel Gallery, a private gallery of decorative arts, during the week of an insurance appraisal.",
+  "briefing": "On Thursday at 21:40, insurance appraiser Odile Marchetti examined the Ravel Gallery's prize piece \u2014 the Nightingale, a nineteenth-century jewelled clockwork bird insured for 3.5 million \u2014 in the gallery's vault and declared it a replica. The real bird is gone. The vault was locked all week and nobody reported a break-in. In the previous ten days the bird had been out for restoration and returned on Monday night; the vault was also opened in the small hours of Wednesday. Gallery owner Lucien Ravel recently raised the insurance cover. Restorer Irene Vance had the bird in her studio. Security consultant Felix Dorn built the vault system. Find out when the switch happened, who made it, and whether anyone should be charged.",
+  "victim": {
+    "name": "The Ravel Nightingale",
+    "description": "A jewelled, singing clockwork bird of gold and enamel, 1860s. Insured for 3.5 million."
+  },
+  "charges": [
+    {
+      "id": "theft",
+      "label": "Theft",
+      "elements": [
+        "motive",
+        "opportunity",
+        "identity"
+      ]
+    },
+    {
+      "id": "handling",
+      "label": "Handling stolen goods",
+      "elements": [
+        "opportunity",
+        "identity"
+      ]
+    }
+  ],
+  "seats": [
+    {
+      "id": "detective",
+      "role": "detective",
+      "title": "Lead Detective",
+      "required": true,
+      "blurb": "Runs the investigation: chooses leads, orders lab work, interviews witnesses, interrogates suspects, and recommends a charge."
+    },
+    {
+      "id": "forensic",
+      "role": "forensic",
+      "title": "Forensic Examiner",
+      "required": true,
+      "blurb": "Performs the laboratory and digital analysis and testifies as the expert witness."
+    },
+    {
+      "id": "prosecutor",
+      "role": "prosecutor",
+      "title": "Prosecutor",
+      "required": true,
+      "blurb": "Decides whether and whom to charge, then must prove the case beyond reasonable doubt."
+    },
+    {
+      "id": "defense",
+      "role": "defense",
+      "title": "Defense Counsel",
+      "required": true,
+      "blurb": "Represents whoever is charged: suppression motions, cross-examination, and the alternative theory."
+    },
+    {
+      "id": "judge",
+      "role": "judge",
+      "title": "Presiding Judge",
+      "required": true,
+      "blurb": "Rules on warrants, motions and objections; keeps the trial fair; passes sentence."
+    },
+    {
+      "id": "lucien",
+      "role": "suspect",
+      "title": "Lucien Ravel \u2014 Gallery Owner",
+      "characterId": "lucien",
+      "required": true,
+      "blurb": "A person of interest. You will receive his private knowledge and secrets."
+    },
+    {
+      "id": "irene",
+      "role": "suspect",
+      "title": "Irene Vance \u2014 Restorer",
+      "characterId": "irene",
+      "required": true,
+      "blurb": "A person of interest. You will receive her private knowledge and secrets."
+    },
+    {
+      "id": "felix",
+      "role": "suspect",
+      "title": "Felix Dorn \u2014 Security Consultant",
+      "characterId": "felix",
+      "required": true,
+      "blurb": "A person of interest. You will receive his private knowledge and secrets."
+    },
+    {
+      "id": "pavel",
+      "role": "witness",
+      "title": "Pavel Novak \u2014 Night Guard",
+      "characterId": "pavel",
+      "required": true,
+      "blurb": "Guards the gallery at night. Saw something on Monday; slept through something on Wednesday."
+    },
+    {
+      "id": "odile",
+      "role": "witness",
+      "title": "Odile Marchetti \u2014 Insurance Appraiser",
+      "characterId": "odile",
+      "required": true,
+      "blurb": "Spotted the fake. Knows the real bird better than anyone alive."
+    },
+    {
+      "id": "juror1",
+      "role": "juror",
+      "title": "Juror No. 1 (Foreperson)",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    },
+    {
+      "id": "juror2",
+      "role": "juror",
+      "title": "Juror No. 2",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    },
+    {
+      "id": "juror3",
+      "role": "juror",
+      "title": "Juror No. 3",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    }
+  ],
+  "procedure": {
+    "investigationHours": 20,
+    "interviewExchanges": 5,
+    "maxWitnessesPerSide": 4,
+    "maxQuestionsDirect": 3,
+    "maxQuestionsCross": 3,
+    "juryRounds": 3,
+    "standard": "Guilt must be proved beyond reasonable doubt on the admitted record. Evidence that was suppressed or excluded, and testimony that was struck, must not be considered. A unanimous jury is required to convict or acquit."
+  },
+  "crimeScene": {
+    "kind": "gallery",
+    "label": "The Vault, Ravel Gallery"
+  },
+  "estimatedMinutes": 25,
+  "topicLabels": {
+    "irene.money": "the state of Irene Vance's finances",
+    "irene.swap": "what happened to the bird on Monday night",
+    "irene.whereabouts": "where Irene Vance was on Tuesday morning",
+    "felix.visit": "whether Felix Dorn came to the gallery on Wednesday night",
+    "felix.sensors": "what Felix Dorn was doing in the vault",
+    "lucien.whereabouts": "where Lucien Ravel was on Wednesday night",
+    "lucien.debts": "Lucien Ravel's debts",
+    "lucien.key": "Lucien Ravel's master override",
+    "lucien.policy": "who asked for the insurance cover to be raised",
+    "pavel.saw": "what the night guard saw on Monday",
+    "pavel.camera": "why the corridor camera was paused on Monday",
+    "pavel.sleep": "how the Wednesday night shift was kept",
+    "odile.replica": "how the fake was detected",
+    "odile.irene": "what Irene Vance asked the appraiser",
+    "vault.access": "who opened the vault, and when"
+  },
+  "vocab": {
+    "timeline": "The Nightingale went into a locked vault on Monday night and came out a fake on Thursday.",
+    "window": "between Monday evening and Thursday night",
+    "windowStart": "from Monday evening, when the bird came back from restoration, until the appraisal on Thursday",
+    "place": "the vault",
+    "scene": "the vault and the display case",
+    "goal": "who wanted that bird and could reach it",
+    "harm": "a priceless object has been stolen",
+    "forensicBrief": [
+      "The fake is my best witness. Every replica carries the hand of whoever made it \u2014 the enamel, the tool marks, the casting seams. Get me the bird, the case, every log that touched that vault, and I will tell you who could have made it.",
+      "Nobody broke in, so the records will tell us more than the lock. I want the vault log, the camera files, and the replica itself, sealed and logged. I'll report what they show and nothing more."
+    ],
+    "prosecutionOpening": [
+      "The Nightingale did not fly out of a locked vault. Someone carried it out in plain sight and left a forgery singing in its place.",
+      "The Nightingale did not leave a locked vault by itself. The evidence will show who took it, and when."
+    ],
+    "sentences": {
+      "theft": "For the theft of an object of this value I sentence you to six years' imprisonment, and I make a confiscation order.",
+      "handling": "For handling stolen goods of this value I sentence you to four years' imprisonment."
+    },
+    "responsibleQuestion": "Who actually stole the Nightingale?",
+    "crime": "the theft of the Ravel Nightingale",
+    "victimShort": "The Nightingale",
+    "relationshipQuestion": "What was your connection to the Nightingale this week \u2014 and to Lucien Ravel?"
+  }
+}

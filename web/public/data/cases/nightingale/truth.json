@@ -1,0 +1,26 @@
+{
+  "culprit": "irene",
+  "summary": "Irene Vance switched the Nightingale on Monday night, not Wednesday. Insolvent and owed two years of fees by Lucien Ravel, she spent the ten days of the restoration casting a replica from a silicone mould. On Monday she asked the night guard to pause the corridor camera 'for her photographs', put the fake in the display case at 23:09, and walked out of the loading door with the real bird in her equipment case. On Tuesday morning she shipped it to a dealer in Antwerp as 'restoration materials' declared at 900,000. The vault opening on Wednesday night that looked like the theft was Felix Dorn secretly replacing a faulty sensor; the owner with the debts and the raised insurance was at a card table across town.",
+  "motive": "Insolvency, and two years of unpaid fees from the gallery — settled with a 900,000 private sale.",
+  "method": "A replica cast during the restoration and swapped in when she returned the bird, with the corridor camera paused at her request.",
+  "timeline": [
+    { "time": "Apr", "what": "Irene asks Odile Marchetti how insurers detect enamel replicas. Her studio is insolvent." },
+    { "time": "−10 days", "what": "The Nightingale goes to Irene's studio for restoration. She casts a mould and makes the replica." },
+    { "time": "Mon 22:59", "what": "At Irene's request, Pavel pauses the vault corridor camera." },
+    { "time": "Mon 23:08", "what": "Irene opens the vault and puts the replica in the display case." },
+    { "time": "Mon 23:30", "what": "Irene leaves by the loading door with the real bird in her equipment case. Pavel holds the door." },
+    { "time": "Tue 08:40", "what": "Irene ships a crate of 'restoration materials' to Antwerp, declared at 900,000." },
+    { "time": "Wed 01:12", "what": "Felix Dorn sneaks in to replace a faulty sensor. He never opens the case. Pavel is asleep." },
+    { "time": "Wed 22:00–03:30", "what": "Lucien Ravel is at the Lantern Club, losing." },
+    { "time": "Thu 21:40", "what": "Odile Marchetti declares the bird in the vault a fake." }
+  ],
+  "misleading": [
+    { "what": "The Wednesday night vault opening and the hooded figure", "why": "Felix Dorn fixing his own faulty sensor in secret to save his contract." },
+    { "what": "Lucien Ravel's debts, raised insurance and false alibi", "why": "The insurer raised the cover; he lied about his whereabouts to hide his gambling." },
+    { "what": "The restorer's legitimate access", "why": "Exactly what made the switch invisible: she was supposed to be in the vault on Monday." }
+  ],
+  "unreliable": [
+    { "who": "pavel", "why": "He slept through Wednesday night and back-filled his rounds — and he paused the camera on Monday at the culprit's request." }
+  ],
+  "twist": "The theft everyone was investigating happened on Wednesday night. The real one happened on Monday, in plain sight, by the person being paid to put the bird back."
+}

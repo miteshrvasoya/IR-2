@@ -8,7 +8,7 @@ type Gesture = 'object' | 'point' | 'gavel' | 'slump' | 'nod' | 'shake' | 'exami
 
 const OUTFITS: Record<string, (a: string) => { top: string; legs: string; shirt: string; tie?: string; coat?: number; apron?: boolean; hood?: boolean; badge?: boolean; collar?: boolean }> = {
   detective: (a) => ({ top: '#8a7353', legs: '#26262b', shirt: '#e4dfd3', tie: a, coat: 0.5 }),
-  forensic: () => ({ top: '#c9d2d6', legs: '#34414b', shirt: '#3d8a8a', coat: 0.55 }),
+  forensic: () => ({ top: '#a9b3b8', legs: '#34414b', shirt: '#3d8a8a', coat: 0.55 }),
   prosecutor: (a) => ({ top: '#1c2740', legs: '#1c2740', shirt: '#f2f0ea', tie: a }),
   defense: (a) => ({ top: '#3a3537', legs: '#2a2729', shirt: '#f2f0ea', tie: a }),
   judge: () => ({ top: '#0d0d10', legs: '#0d0d10', shirt: '#f4f2ee', coat: 0.86, collar: true }),

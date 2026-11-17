@@ -61,7 +61,7 @@ export function recordView(sim: Sim, role: RoleKind) {
   const exhibits = Object.values(sim.ev).filter((e) => role === 'juror' ? e.status === 'admitted' : ['offered', 'admitted', 'excluded', 'suppressed'].includes(e.status)).map((e) => evidenceView(sim, e.id));
   if (role === 'juror') for (const x of exhibits) { x.challenges = sim.ev[x.id].challenges.filter((c) => phaseAtLeast(c.phase, 'opening')).map((c) => ({ by: c.by, ground: c.ground, phase: c.phase })); x.limitations = x.limitations.filter((l) => sim.ev[x.id].challenges.some((c) => c.limitationId === l.id && phaseAtLeast(c.phase, 'opening'))); }
   return {
-    charge: sim.b.def.charges.find((c) => c.id === sim.st.charge)?.label || null,
+    charge: sim.b.def.charges.find((c) => c.id === sim.st.charge)?.label || null, chargeId: sim.st.charge, chargeElements: sim.b.def.charges.find((c) => c.id === sim.st.charge)?.elements || [],
     defendant: sim.st.defendant, defendantName: sim.charName(sim.st.defendant), plea: sim.st.plea,
     exhibits,
     testimony: t.testimony.filter((x) => !x.struck).map((x) => ({ ...factView(sim, x.fact), witness: sim.charName(x.witness), witnessId: x.witness, witnessImpeached: sim.st.chars[x.witness]?.caught.length > 0 && role !== 'juror' ? true : (sim.st.chars[x.witness]?.sworn && sim.st.chars[x.witness]?.caught.length > 0) })),
@@ -88,6 +88,7 @@ export interface AgentView {
   transcript: { seq: number; who: string; role?: string; kind?: string; text: string }[];
   memory: { notes: string[]; theory: any };
   topicLabels: Record<string, string>; told?: Record<string, string[]>;
+  vocab: import('../shared/types.ts').CaseVocab; charges: { id: string; label: string }[];
 }
 
 /** Build everything one agent is entitled to know for one decision. */
@@ -107,7 +108,7 @@ export function buildView(sim: Sim, turn: Turn, instruction: string, options: Ac
     facts: seesFacts ? st.investigatorFacts.map((f) => factView(sim, f)) : [],
     transcript: sim.events.filter((e) => e.text && e.type === 'speech' && canSee(sim, seat, e)).slice(-18).map((e) => ({ seq: e.seq, who: e.actor?.name || 'Court', role: e.actor?.role, kind: e.kind, text: e.text! })),
     memory: { notes: sim.memory(seat).notes.slice(-24), theory: sim.memory(seat).theory },
-    topicLabels: {},
+    topicLabels: {}, vocab: sim.b.def.vocab, charges: sim.b.def.charges.map((c) => ({ id: c.id, label: c.label })),
   };
   if (seesFacts) v.told = Object.fromEntries(Object.entries(st.chars).map(([id, c]) => [id, c.revealed]));
   if (def.characterId) {

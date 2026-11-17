@@ -11,7 +11,7 @@
     "build": "vite build",
     "start": "NODE_ENV=production tsx server/index.ts",
     "simulate": "tsx scripts/simulate.ts",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/core.test.ts tests/llm.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

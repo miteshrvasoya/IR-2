@@ -1,0 +1,392 @@
+[
+ {
+  "id": "F01",
+  "topic": "voss.report",
+  "text": "Voss had found irregularities in the grant accounts administered by Mara Quill and intended to put them before the board on Monday.",
+  "knownBy": {
+   "mara": {
+    "stance": "deny",
+    "cover": "Elias and I had no disagreement about the accounts. The annual audit was routine.",
+    "yieldsTo": [
+     "E07.A1",
+     "E08"
+    ],
+    "firmness": 3,
+    "say": "Elias told me on Saturday afternoon that he had found a problem in the grant accounts and would take it to the board on Monday."
+   },
+   "gideon": {
+    "stance": "guarded",
+    "cover": "Board business is confidential.",
+    "firmness": 1,
+    "say": "Voss told me there was a hole in the grant accounts and that it led to his own deputy. He meant to bring it to the board on Monday."
+   }
+  },
+  "contradictedBy": [
+   "E07.A1",
+   "E08.A1"
+  ],
+  "unlocks": [
+   "L09"
+  ],
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "motive",
+    "strength": 3,
+    "note": "Voss was about to expose her handling of the grant accounts."
+   }
+  ]
+ },
+ {
+  "id": "F02",
+  "topic": "mara.whereabouts",
+  "text": "Mara Quill was not in the archive room the whole time: she was in the dome with Voss at roughly 22:45 to 22:52.",
+  "knownBy": {
+   "mara": {
+    "stance": "deny",
+    "cover": "I was in the archive room cataloguing plates from half past ten until the alarm was raised. I never went near the dome.",
+    "yieldsTo": [
+     "E05.A1"
+    ],
+    "firmness": 4,
+    "say": "I went up to the dome. I let myself in at about a quarter to eleven. I only wanted him to give me more time."
+   }
+  },
+  "contradictedBy": [
+   "E03",
+   "F06",
+   "E05.A1"
+  ],
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "opportunity",
+    "strength": 3,
+    "note": "Places her in the dome with the victim inside the time-of-death window."
+   }
+  ]
+ },
+ {
+  "id": "F03",
+  "topic": "mara.shawl",
+  "text": "Mara wore a burgundy wool shawl at the gala; its fringe was torn in a struggle and she pushed it into the archive-room bin afterwards.",
+  "knownBy": {
+   "mara": {
+    "stance": "deny",
+    "cover": "I took the shawl off because the hall was warm. I have no idea where it ended up.",
+    "yieldsTo": [
+     "E05.A1"
+    ],
+    "firmness": 3,
+    "say": "He caught hold of my shawl and the fringe tore. Afterwards I pushed it into the bin in the archive room."
+   }
+  },
+  "contradictedBy": [
+   "E05",
+   "E05.A1"
+  ],
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "identity",
+    "strength": 3,
+    "note": "Her torn shawl links her physically to the struggle."
+   }
+  ]
+ },
+ {
+  "id": "F04",
+  "topic": "theo.whereabouts",
+  "text": "Theo Lark did not leave at 22:15. He stayed in the control room until about 23:05.",
+  "knownBy": {
+   "theo": {
+    "stance": "deny",
+    "cover": "I left around quarter past ten and cycled home. I wasn't there when it happened.",
+    "yieldsTo": [
+     "E03"
+    ],
+    "firmness": 1,
+    "say": "I didn't leave at quarter past ten. I was in the control room until just after eleven."
+   }
+  },
+  "contradictedBy": [
+   "E03"
+  ],
+  "points": [
+   {
+    "suspect": "theo",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "He lied about leaving: he was still in the building at the time of death."
+   }
+  ]
+ },
+ {
+  "id": "F05",
+  "topic": "theo.data",
+  "text": "From 22:24 to 23:02 Theo sat at the control-room console copying the observatory's unpublished survey data to a USB drive. He never left the console.",
+  "knownBy": {
+   "theo": {
+    "stance": "guarded",
+    "cover": "I was just finishing some data reductions.",
+    "yieldsTo": [
+     "E03",
+     "E11"
+    ],
+    "firmness": 2,
+    "say": "I was copying the survey data. All of it, onto a USB stick, because he was cutting me off and it's three years of my life. I sat at that console starting batches by hand from about 22:24 until gone eleven. I never left the chair."
+   }
+  },
+  "unlocks": [
+   "L11"
+  ],
+  "points": [
+   {
+    "suspect": "theo",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "By his own account he was occupied at the console throughout.",
+    "exculpatory": true
+   }
+  ]
+ },
+ {
+  "id": "F06",
+  "topic": "mara.whereabouts",
+  "text": "At about 22:55 Ivo Brandt saw Mara Quill coming down the service stairs from the dome, flushed and without her shawl.",
+  "knownBy": {
+   "ivo": {
+    "stance": "guarded",
+    "cover": "I was packing crates by then. I wasn't watching the stairs.",
+    "firmness": 1,
+    "say": "I was on the service stairs \u2014 never mind why \u2014 and at about five to eleven Dr. Quill came down from the dome. Flushed, in a hurry, and she'd lost that red shawl she had on earlier."
+   }
+  },
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "opportunity",
+    "strength": 3,
+    "note": "Eyewitness puts her leaving the dome minutes after the fall."
+   }
+  ]
+ },
+ {
+  "id": "F07",
+  "topic": "gideon.whereabouts",
+  "text": "At about 22:35 Ivo saw Gideon Ashby striding toward the dome corridor, visibly furious.",
+  "knownBy": {
+   "ivo": {
+    "stance": "open",
+    "say": "About 22:35 I saw Mr. Ashby marching toward the dome corridor with a face like thunder."
+   }
+  },
+  "unlocks": [
+   "L13"
+  ],
+  "points": [
+   {
+    "suspect": "gideon",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "Seen heading for the dome, angry, shortly before the death."
+   }
+  ]
+ },
+ {
+  "id": "F08",
+  "topic": "gideon.whereabouts",
+  "text": "Ashby found the dome corridor door locked, turned back, and left the building at 22:41.",
+  "knownBy": {
+   "gideon": {
+    "stance": "guarded",
+    "cover": "I left straight after the speeches. I had an early flight.",
+    "yieldsTo": [
+     "E04",
+     "F07"
+    ],
+    "firmness": 1,
+    "say": "I went to have it out with him. The corridor door was locked. I stood there like a fool for a minute, then I walked out to my car and left. That was about twenty to eleven."
+   }
+  },
+  "contradictedBy": [],
+  "points": [
+   {
+    "suspect": "gideon",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "By his account he never got into the dome and left before the fall.",
+    "exculpatory": true
+   }
+  ]
+ },
+ {
+  "id": "F09",
+  "topic": "gideon.threat",
+  "text": "Ashby sent Voss a threatening text that evening because Voss meant to disclose that Ashby's donation was structured as a tax shelter.",
+  "knownBy": {
+   "gideon": {
+    "stance": "deny",
+    "cover": "Elias and I were on excellent terms. I have funded that place for a decade.",
+    "yieldsTo": [
+     "E07.A1"
+    ],
+    "firmness": 2,
+    "say": "Yes, I sent that message. He was going to tell the world my donation was a tax arrangement. I was angry. I threatened his reputation, not his neck."
+   }
+  },
+  "contradictedBy": [
+   "E07.A1"
+  ],
+  "points": [
+   {
+    "suspect": "gideon",
+    "element": "motive",
+    "strength": 2,
+    "note": "He threatened Voss the same evening over a financial exposure."
+   }
+  ]
+ },
+ {
+  "id": "F10",
+  "topic": "theo.funding",
+  "text": "That afternoon Voss told Theo he was cutting his thesis funding. They argued in front of the guests at about 21:10.",
+  "knownBy": {
+   "theo": {
+    "stance": "guarded",
+    "cover": "It was an ordinary academic disagreement.",
+    "yieldsTo": [
+     "E10"
+    ],
+    "firmness": 1,
+    "say": "He told me that afternoon he was pulling my funding. I shouted at him by the bar. Everyone saw."
+   },
+   "nell": {
+    "stance": "open",
+    "say": "The student, Theo, had a proper row with Dr. Voss by the bar a bit after nine. Something about his money being stopped."
+   },
+   "ivo": {
+    "stance": "open",
+    "say": "The young one, Theo, was shouting at Dr. Voss by my bar around ten past nine. Funding, I gathered."
+   }
+  },
+  "points": [
+   {
+    "suspect": "theo",
+    "element": "motive",
+    "strength": 2,
+    "note": "Voss had just ended his funding; they quarrelled publicly."
+   }
+  ]
+ },
+ {
+  "id": "F11",
+  "topic": "dome.voices",
+  "text": "At about 22:45 Nell Okafor heard raised voices from the dome: Voss's, and a woman's.",
+  "knownBy": {
+   "nell": {
+    "stance": "open",
+    "say": "About quarter to eleven I heard raised voices from the dome. Dr. Voss, and a woman. I took it for a staff matter and left them to it."
+   }
+  },
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "A woman was arguing with Voss in the dome at the critical time."
+   }
+  ]
+ },
+ {
+  "id": "F12",
+  "topic": "nell.attention",
+  "text": "Nell spent much of the evening watching a football match on her phone and wrote up her logbook afterwards from memory.",
+  "knownBy": {
+   "nell": {
+    "stance": "deny",
+    "cover": "I logged everything as it happened. That book is accurate to the minute.",
+    "yieldsTo": [
+     "E13.A1"
+    ],
+    "firmness": 2,
+    "say": "All right. The match was on. I wrote the book up afterwards, from memory. The times are near enough, but I wasn't looking at the clock."
+   }
+  },
+  "contradictedBy": [
+   "E13.A1"
+  ],
+  "points": []
+ },
+ {
+  "id": "F13",
+  "topic": "mara.camera",
+  "text": "Mara disabled the dome corridor camera from her own workstation at 20:58.",
+  "knownBy": {
+   "mara": {
+    "stance": "deny",
+    "cover": "Half the staff know my workstation password \u2014 it is on a note under the keyboard. Anyone could have done that.",
+    "firmness": 5,
+    "say": "I switched the corridor camera to maintenance myself. I wanted to speak to him without being recorded."
+   }
+  },
+  "contradictedBy": [],
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "identity",
+    "strength": 2,
+    "note": "The camera covering the dome was switched off from her login two hours before the death."
+   }
+  ]
+ },
+ {
+  "id": "F14",
+  "topic": "override.cards",
+  "text": "Only two override keycards exist for the dome service door: Voss's and the deputy director's.",
+  "knownBy": {
+   "nell": {
+    "stance": "open",
+    "say": "There are only two override cards for that service door. The Director had one. The Deputy Director has the other."
+   },
+   "mara": {
+    "stance": "guarded",
+    "cover": "I would have to check who holds override cards.",
+    "firmness": 1,
+    "say": "There are two override cards. Elias had one and I have the other."
+   }
+  },
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "opportunity",
+    "strength": 2,
+    "note": "She held one of only two cards able to open the dome service door at 22:47."
+   }
+  ]
+ },
+ {
+  "id": "F16",
+  "topic": "mara.camera",
+  "text": "Mara's workstation password was written on a note under her keyboard and was known to several staff, Theo among them.",
+  "knownBy": {
+   "theo": {
+    "stance": "open",
+    "say": "Everyone knows Dr. Quill's password \u2014 it's on a sticky note under her keyboard. I've used it myself to book telescope time."
+   },
+   "mara": {
+    "stance": "open",
+    "say": "My password is on a note under my keyboard. Half the staff have used it."
+   }
+  },
+  "points": [
+   {
+    "suspect": "mara",
+    "element": "identity",
+    "strength": 1,
+    "note": "Others could have used her login to disable the camera.",
+    "exculpatory": true
+   }
+  ]
+ }
+]

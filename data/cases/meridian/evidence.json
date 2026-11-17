@@ -1,0 +1,163 @@
+[
+  {
+    "id": "E01", "title": "Scene photographs and body position", "type": "Photographs",
+    "description": "Forty-two photographs of the dome floor. Voss lies on his back 2.8 metres out from the foot of the gantry stairs, beneath the upper gantry rail. His glasses are on the gantry platform above.",
+    "source": "Scenes-of-crime officer", "collection": "Photographed in situ before the body was moved; scale markers placed.",
+    "location": "crime_scene", "topics": ["dome.fall"], "relevantTo": [], "relatedTo": ["E02", "E06"],
+    "points": [], "limitations": [{ "id": "E01.L1", "ground": "reliability", "text": "First responders moved a chair and may have shifted the body slightly before photographs were taken.", "strength": 0.2 }],
+    "analyses": [{ "id": "E01.A1", "label": "Fall trajectory reconstruction", "kind": "forensic", "hours": 0, "turns": 3,
+      "findings": "The body came to rest 2.8 m from the gantry base. That distance requires horizontal velocity at the moment of leaving the upper platform. It is consistent with a forceful push over the rail and inconsistent with a stumble on the stairs. Glasses on the platform indicate the incident began up there.",
+      "yieldsFacts": [] }],
+    "visual": { "kind": "photos" }
+  },
+  {
+    "id": "E02", "title": "Post-mortem report", "type": "Medical report",
+    "description": "Pathologist's report on Dr. Voss. Cause of death: head and chest trauma from a fall of about five metres. Estimated time of death between 22:30 and 23:15.",
+    "source": "County pathologist", "collection": "Body received sealed; continuity signed by attending officer.",
+    "location": "lab", "topics": ["dome.fall", "mara.shawl"], "relevantTo": [], "relatedTo": ["E01", "E05"],
+    "points": [], "limitations": [{ "id": "E02.L1", "ground": "reliability", "text": "The time-of-death window is an estimate from body temperature and is 45 minutes wide.", "strength": 0.2 }],
+    "analyses": [{ "id": "E02.A1", "label": "Fingernail scrapings and injury pattern", "kind": "medical", "hours": 0, "turns": 3,
+      "findings": "Fresh bruising to both forearms of a defensive type: he was fending someone off. Scrapings from under the right-hand fingernails contain burgundy-dyed wool fibres. He grabbed at a woollen garment shortly before death." }],
+    "visual": { "kind": "document" }
+  },
+  {
+    "id": "E03", "title": "Keycard access log", "type": "Digital record",
+    "description": "Door-controller export for Saturday night. Theo Lark's card: control room in 22:20, out 23:05. Mara Quill's card: archive room in 22:31, no exit recorded (the archive door does not log exits). Dome service door: opened 22:47 by an OVERRIDE card — the log does not record which override card.",
+    "source": "Building access-control server", "collection": "Exported by the detective in the presence of the security officer; hash recorded.",
+    "location": "office", "topics": ["theo.whereabouts", "mara.whereabouts", "override.cards"], "relevantTo": ["theo", "mara"], "relatedTo": ["E04", "E09"],
+    "points": [
+      { "suspect": "theo", "element": "opportunity", "strength": 2, "note": "His card shows him in the building until 23:05." },
+      { "suspect": "mara", "element": "opportunity", "strength": 2, "note": "An override card opened the dome service door at 22:47; she holds one of them." }
+    ],
+    "limitations": [
+      { "id": "E03.L1", "ground": "reliability", "text": "The controller clock is known to drift by up to three minutes.", "strength": 0.2 },
+      { "id": "E03.L2", "ground": "alternative_explanation", "text": "The 22:47 override swipe could have been Voss's own card: the log cannot tell the two override cards apart.", "strength": 0.5 }
+    ],
+    "analyses": [], "visual": { "kind": "printout" }
+  },
+  {
+    "id": "E04", "title": "Lobby CCTV footage", "type": "CCTV",
+    "description": "Lobby camera, 19:00 to midnight. Gideon Ashby crosses the lobby toward the car park at 22:41 and does not return. The dome corridor camera shows no footage at all after 20:58: it was switched off from the admin console.",
+    "source": "Security DVR", "collection": "Drive seized and imaged; original sealed.",
+    "location": "office", "topics": ["gideon.whereabouts", "mara.camera"], "relevantTo": ["gideon"], "relatedTo": ["E09", "E12"],
+    "points": [{ "suspect": "gideon", "element": "opportunity", "strength": 2, "note": "He is filmed leaving the building at 22:41.", "exculpatory": true }],
+    "limitations": [{ "id": "E04.L1", "ground": "alternative_explanation", "text": "The lobby camera does not cover the rear service entrance; someone could have re-entered unseen.", "strength": 0.3 }],
+    "analyses": [], "visual": { "kind": "monitor" }
+  },
+  {
+    "id": "E05", "title": "Burgundy wool shawl", "type": "Physical object",
+    "description": "A burgundy wool shawl found pushed to the bottom of the waste bin in the archive room. A hand's width of fringe has been torn away.",
+    "source": "Archive room waste bin", "collection": "Recovered by the detective, bagged and sealed, exhibit label signed.",
+    "location": "evidence_room", "topics": ["mara.shawl", "mara.whereabouts"], "relevantTo": ["mara"], "relatedTo": ["E02", "E10"],
+    "points": [{ "suspect": "mara", "element": "identity", "strength": 2, "note": "A torn shawl hidden in the room she says she never left." }],
+    "limitations": [{ "id": "E05.L1", "ground": "alternative_explanation", "text": "The shawl was a gala gift-shop item: about thirty were sold that evening, in the same dye lot.", "strength": 0.4 }],
+    "analyses": [{ "id": "E05.A1", "label": "Fibre comparison with fingernail scrapings", "kind": "forensic", "hours": 0, "turns": 4,
+      "findings": "The fibres from under Voss's fingernails match the shawl in dye, diameter and twist. The torn fringe edge is fresh. Two long dark hairs on the shawl are consistent with Dr. Quill's reference sample. In my opinion this is the garment he grabbed.",
+      "addsPoints": [{ "suspect": "mara", "element": "identity", "strength": 3, "note": "Fibres under the victim's nails match her shawl; her hair is on it." }] }],
+    "visual": { "kind": "cloth", "color": "#7a1f33" }
+  },
+  {
+    "id": "E06", "title": "Fingerprints on the gantry rail", "type": "Fingerprints",
+    "description": "Seven clear fingerprints lifted from the upper gantry rail directly above where Voss fell. All seven are Theo Lark's. There are also smudged, unusable partials.",
+    "source": "Upper gantry rail", "collection": "Powdered and lifted by scenes-of-crime; lifts numbered and sealed.",
+    "location": "crime_scene", "topics": ["theo.whereabouts", "dome.fall"], "relevantTo": ["theo"], "relatedTo": ["E01"],
+    "points": [{ "suspect": "theo", "element": "identity", "strength": 2, "note": "His are the only identifiable prints on the rail Voss went over." }],
+    "limitations": [{ "id": "E06.L1", "ground": "alternative_explanation", "text": "Theo operates the telescope from that gantry most nights. Fingerprints cannot be dated.", "strength": 0.8 }],
+    "analyses": [{ "id": "E06.A1", "label": "Overlay and smear examination", "kind": "forensic", "hours": 0, "turns": 3,
+      "findings": "Lark's prints lie UNDER a broad fabric smear containing wool fibres. Someone in a woollen garment was pressed against that rail after his prints were left. The prints themselves say nothing about that night.",
+      "addsLimitations": [{ "id": "E06.L2", "ground": "reliability", "text": "The examiner's own finding is that the prints pre-date the incident and were smeared over by a wool garment.", "strength": 0.9 }],
+      "addsPoints": [{ "suspect": "mara", "element": "identity", "strength": 1, "note": "A wool garment was pressed to the rail after Lark's prints were left." }] }],
+    "visual": { "kind": "prints" }
+  },
+  {
+    "id": "E07", "title": "Voss's mobile phone", "type": "Digital device",
+    "description": "The victim's phone, found in his jacket. Locked. Screen cracked in the fall but the device powers on.",
+    "source": "Victim's jacket pocket", "collection": "Seized at the scene, placed in a Faraday bag.",
+    "location": "evidence_room", "topics": ["voss.report", "gideon.threat"], "relevantTo": ["mara", "gideon"], "relatedTo": ["E08"],
+    "points": [], "limitations": [],
+    "analyses": [{ "id": "E07.A1", "label": "Forensic extraction of messages and drafts", "kind": "digital", "hours": 0, "turns": 4,
+      "findings": "Two items of note. (1) An unsent email to the board, saved 18:40: 'I have found irregularities in the grant accounts administered by Dr. Quill. I will present the figures on Monday. I have told her so.' (2) A text received 21:52 from Gideon Ashby: 'You will regret making this public.'",
+      "yieldsFacts": ["F01"],
+      "addsPoints": [
+        { "suspect": "mara", "element": "motive", "strength": 3, "note": "Voss had told her he would expose her grant accounts on Monday." },
+        { "suspect": "gideon", "element": "motive", "strength": 2, "note": "Ashby texted a threat two hours before the death." }
+      ],
+      "addsLimitations": [{ "id": "E07.L1", "ground": "relevance", "text": "The Ashby text does not say what 'this' refers to, and the draft email was never sent.", "strength": 0.2 }] }],
+    "visual": { "kind": "phone" }
+  },
+  {
+    "id": "E08", "title": "Grant account ledger", "type": "Financial record",
+    "description": "Three years of the research-grant ledger. Payments are approved by M. Quill. A supplier called 'Q-Star Consulting' appears eleven times.",
+    "source": "Observatory finance office", "collection": "Produced by the bursar on request; certified copy.",
+    "location": "office", "topics": ["voss.report"], "relevantTo": ["mara"], "relatedTo": ["E07", "E14"],
+    "points": [{ "suspect": "mara", "element": "motive", "strength": 2, "note": "She approved repeated payments to an unfamiliar consultancy." }],
+    "limitations": [{ "id": "E08.L1", "ground": "relevance", "text": "Irregular bookkeeping is not evidence of violence; many people had access to the finance system.", "strength": 0.3 }],
+    "analyses": [{ "id": "E08.A1", "label": "Forensic accounting trace", "kind": "financial", "hours": 0, "turns": 5,
+      "findings": "Eleven payments totalling 240,000 went to Q-Star Consulting, a shell company with no staff, registered to Dr. Quill's sister-in-law. No work product exists. This is embezzlement, and exposure on Monday would have ended her career.",
+      "addsPoints": [{ "suspect": "mara", "element": "motive", "strength": 3, "note": "240,000 diverted to a shell company tied to her family." }] }],
+    "visual": { "kind": "ledger" }
+  },
+  {
+    "id": "E09", "title": "Admin console audit log", "type": "Digital record",
+    "description": "Audit trail of the security admin console. At 20:58 the dome corridor camera was set to 'maintenance — recording off' by the account 'mquill', from the workstation in the deputy director's office.",
+    "source": "Security admin console", "collection": "Exported and hashed by the detective.",
+    "location": "office", "topics": ["mara.camera"], "relevantTo": ["mara"], "relatedTo": ["E04", "E03"],
+    "points": [{ "suspect": "mara", "element": "identity", "strength": 2, "note": "The dome camera was disabled from her account and her desk." }],
+    "limitations": [{ "id": "E09.L1", "ground": "alternative_explanation", "text": "Her password was on a note under her keyboard; the log proves the account, not the person.", "strength": 0.6 }],
+    "analyses": [], "visual": { "kind": "printout" }
+  },
+  {
+    "id": "E10", "title": "Gala photographs", "type": "Photographs",
+    "description": "The event photographer's time-stamped set. 21:10: Theo Lark and Voss in a heated exchange by the bar. 21:30: Mara Quill at the podium wearing a burgundy shawl. 23:20: group photograph in the hall — Quill is in it, without the shawl.",
+    "source": "Event photographer", "collection": "Memory card copied with consent; original retained by photographer.",
+    "location": "office", "topics": ["mara.shawl", "theo.funding"], "relevantTo": ["mara", "theo"], "relatedTo": ["E05"],
+    "points": [
+      { "suspect": "theo", "element": "motive", "strength": 1, "note": "Photographed arguing with Voss ninety minutes before the death." },
+      { "suspect": "mara", "element": "identity", "strength": 1, "note": "Wearing a burgundy shawl at 21:30, not wearing it at 23:20." }
+    ],
+    "limitations": [{ "id": "E10.L1", "ground": "alternative_explanation", "text": "People take shawls off indoors; the photographs show nothing of the dome.", "strength": 0.4 }],
+    "analyses": [], "visual": { "kind": "photos" }
+  },
+  {
+    "id": "E11", "title": "Theo Lark's USB drive", "type": "Digital device",
+    "description": "A USB drive holding the observatory's unpublished survey dataset. The copy log shows 3,100 files written one after another from the control-room console, the first at 22:24 and the last at 23:02, each started by hand in batches a few minutes apart.",
+    "source": "Theo Lark", "collection": "Imaged by the detective; original sealed.",
+    "location": "evidence_room", "topics": ["theo.data", "theo.whereabouts"], "relevantTo": ["theo"], "relatedTo": ["E03"],
+    "points": [{ "suspect": "theo", "element": "opportunity", "strength": 3, "note": "He was at the control-room console, starting copy batches by hand, throughout the time of death.", "exculpatory": true }],
+    "limitations": [{ "id": "E11.L1", "ground": "alternative_explanation", "text": "A script could in principle have started the batches without him.", "strength": 0.3 }],
+    "analyses": [], "visual": { "kind": "usb" }
+  },
+  {
+    "id": "E12", "title": "Valet ticket and toll record", "type": "Records",
+    "description": "Valet stub: Ashby's car released 22:43. Motorway toll transponder: his car passes the Harrow gate, 31 km away, at 23:01.",
+    "source": "Valet company and toll operator", "collection": "Obtained by production request; certified.",
+    "location": "office", "topics": ["gideon.whereabouts"], "relevantTo": ["gideon"], "relatedTo": ["E04"],
+    "points": [{ "suspect": "gideon", "element": "opportunity", "strength": 3, "note": "His car was 31 km away at 23:01; he left at 22:43.", "exculpatory": true }],
+    "limitations": [{ "id": "E12.L1", "ground": "alternative_explanation", "text": "The records track the car, not the man: a driver could have taken it.", "strength": 0.2 }],
+    "analyses": [], "visual": { "kind": "document" }
+  },
+  {
+    "id": "E13", "title": "Security logbook", "type": "Document",
+    "description": "The night security logbook. Entry: '22:45 — raised voices from dome. Dr V and a woman. Did not attend, assumed staff matter.' Further entries at 23:10 and 23:40 (body found).",
+    "source": "Security desk", "collection": "Seized from the desk; pages numbered and photographed.",
+    "location": "evidence_room", "topics": ["dome.voices", "nell.attention"], "relevantTo": ["nell", "mara"], "relatedTo": ["E03"],
+    "points": [{ "suspect": "mara", "element": "opportunity", "strength": 1, "note": "Contemporaneous note of a woman arguing with Voss in the dome at 22:45." }],
+    "limitations": [],
+    "analyses": [{ "id": "E13.A1", "label": "Ink and handwriting examination", "kind": "forensic", "hours": 0, "turns": 3,
+      "findings": "Every entry from 21:00 to 23:40 is in the same pen, with the same pressure and slant, with no pause marks: they were written in a single sitting, after the event. The times in this book are recollection, not record.",
+      "addsLimitations": [{ "id": "E13.L1", "ground": "reliability", "text": "The entries were written in one sitting afterwards; the 22:45 time is the guard's recollection.", "strength": 0.6 }] }],
+    "visual": { "kind": "book" }
+  },
+  {
+    "id": "E14", "title": "Quill's desk planner", "type": "Document",
+    "description": "A desk planner from the deputy director's locked office drawer. Saturday's page reads: 'E. goes to the board Monday. Talk to him tonight, alone, after speeches. Camera.' The word 'Camera' is underlined twice.",
+    "source": "Deputy director's office, locked drawer", "collection": "Seized during a search of a private office.",
+    "location": "evidence_room", "topics": ["voss.report", "mara.camera", "mara.whereabouts"], "relevantTo": ["mara"], "relatedTo": ["E08", "E09"],
+    "points": [
+      { "suspect": "mara", "element": "motive", "strength": 2, "note": "She knew the board would hear on Monday." },
+      { "suspect": "mara", "element": "identity", "strength": 3, "note": "She planned to meet him alone that night and noted the camera." }
+    ],
+    "limitations": [{ "id": "E14.L1", "ground": "alternative_explanation", "text": "'Talk to him' is not 'harm him'; the note is equally consistent with planning an awkward conversation.", "strength": 0.3 }],
+    "analyses": [], "visual": { "kind": "book" }
+  }
+]

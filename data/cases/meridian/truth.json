@@ -1,0 +1,33 @@
+{
+  "culprit": "mara",
+  "summary": "Dr. Mara Quill pushed Elias Voss over the upper gantry rail at about 22:50. Over three years she had diverted 240,000 of grant money to a shell company registered to her sister-in-law. Voss found the hole in the accounts, told her on Saturday afternoon that he would lay it before the board on Monday, and went up to the dome after the speeches. She had already switched off the corridor camera. She left the archive room, let herself into the dome with her override card, and asked him for time. He refused. In the struggle on the gantry he tore the fringe of her shawl; she pushed him. She buried the shawl in the archive bin and was back in the hall for the 23:20 group photograph.",
+  "motive": "Exposure of her embezzlement to the board on Monday.",
+  "method": "A push over the upper gantry rail during a confrontation she had arranged to be unobserved.",
+  "timeline": [
+    { "time": "18:40", "what": "Voss drafts — and does not send — an email to the board about Quill's grant accounts." },
+    { "time": "20:58", "what": "Quill sets the dome corridor camera to 'maintenance' from her own workstation." },
+    { "time": "21:10", "what": "Theo Lark and Voss argue at the bar about his funding." },
+    { "time": "21:52", "what": "Gideon Ashby texts Voss: 'You will regret making this public.'" },
+    { "time": "22:20", "what": "Lark badges into the control room and starts copying the survey data." },
+    { "time": "22:25", "what": "Voss leaves the hall for the dome." },
+    { "time": "22:31", "what": "Quill badges into the archive room." },
+    { "time": "22:35", "what": "Ashby heads for the dome, finds the corridor door locked, and turns back. Ivo Brandt sees him." },
+    { "time": "22:41", "what": "Ashby leaves the building." },
+    { "time": "22:47", "what": "Quill opens the dome service door with her override card." },
+    { "time": "22:50", "what": "Argument on the gantry. Voss grabs her shawl; she pushes him over the rail." },
+    { "time": "22:55", "what": "Brandt sees Quill coming down the service stairs without her shawl." },
+    { "time": "23:05", "what": "Lark leaves the control room." },
+    { "time": "23:20", "what": "Quill appears in the group photograph." },
+    { "time": "23:40", "what": "Nell Okafor finds the body." }
+  ],
+  "misleading": [
+    { "what": "Theo Lark's fingerprints on the gantry rail", "why": "He works on that gantry every night. The prints lie under the wool smear left during the struggle." },
+    { "what": "Theo's lie about leaving at 22:15", "why": "He was hiding data theft, not murder." },
+    { "what": "Ashby's threatening text and his walk toward the dome", "why": "He was furious about his tax shelter, found a locked door, and drove away." }
+  ],
+  "unreliable": [
+    { "who": "nell", "why": "Her logbook was written up afterwards from memory; she was watching football." },
+    { "who": "ivo", "why": "His grudge against Ashby colours his account, and he hid what he saw on the stairs to conceal his own pilfering." }
+  ],
+  "twist": "The suspect with the fingerprints, the public quarrel and the proven lie was the only one with an unbreakable alibi — and the alibi was a crime of his own."
+}

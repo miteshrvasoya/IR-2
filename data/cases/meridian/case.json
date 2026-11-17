@@ -1,0 +1,160 @@
+{
+  "id": "meridian",
+  "version": 1,
+  "title": "Death at the Meridian Observatory",
+  "tagline": "A director falls from the great telescope on the night of the donor gala. Nobody saw a thing. Everybody is lying about something.",
+  "type": "Suspicious death",
+  "difficulty": 3,
+  "setting": "The Meridian Observatory, a privately funded mountain observatory, on the night of its annual donor gala.",
+  "briefing": "At 23:40 on Saturday night, security guard Nell Okafor found the observatory's director, Dr. Elias Voss (58), dead on the floor of the main dome beneath the telescope gantry. The donor gala had been running in the hall next door since 19:00. Voss was last seen leaving the hall at about 22:25. First responders assumed a fall on the gantry stairs. Three people had reason to quarrel with him that night: his deputy director Dr. Mara Quill, his doctoral student Theo Lark, and board chairman and principal donor Gideon Ashby. The dome corridor camera was not recording. Whether this is an accident or a homicide \u2014 and who, if anyone, should answer for it \u2014 is for the investigation to establish.",
+  "victim": {
+    "name": "Dr. Elias Voss",
+    "description": "Director of the Meridian Observatory, 58. Brilliant, exacting, and not well liked."
+  },
+  "charges": [
+    {
+      "id": "murder",
+      "label": "Murder",
+      "elements": [
+        "motive",
+        "opportunity",
+        "identity"
+      ]
+    },
+    {
+      "id": "manslaughter",
+      "label": "Manslaughter",
+      "elements": [
+        "opportunity",
+        "identity"
+      ]
+    }
+  ],
+  "seats": [
+    {
+      "id": "detective",
+      "role": "detective",
+      "title": "Lead Detective",
+      "required": true,
+      "blurb": "Runs the investigation: chooses leads, orders lab work, interviews witnesses, interrogates suspects, and recommends a charge."
+    },
+    {
+      "id": "forensic",
+      "role": "forensic",
+      "title": "Forensic Examiner",
+      "required": true,
+      "blurb": "Performs every laboratory analysis, writes the reports, and testifies as the expert witness."
+    },
+    {
+      "id": "prosecutor",
+      "role": "prosecutor",
+      "title": "Prosecutor",
+      "required": true,
+      "blurb": "Decides whether and whom to charge, then must prove the case beyond reasonable doubt."
+    },
+    {
+      "id": "defense",
+      "role": "defense",
+      "title": "Defense Counsel",
+      "required": true,
+      "blurb": "Represents whoever is charged: suppression motions, cross-examination, and the alternative theory."
+    },
+    {
+      "id": "judge",
+      "role": "judge",
+      "title": "Presiding Judge",
+      "required": true,
+      "blurb": "Rules on warrants, motions, and objections; keeps the trial fair; passes sentence."
+    },
+    {
+      "id": "mara",
+      "role": "suspect",
+      "title": "Dr. Mara Quill \u2014 Deputy Director",
+      "characterId": "mara",
+      "required": true,
+      "blurb": "A person of interest. You will receive her private knowledge and secrets."
+    },
+    {
+      "id": "theo",
+      "role": "suspect",
+      "title": "Theo Lark \u2014 Doctoral Student",
+      "characterId": "theo",
+      "required": true,
+      "blurb": "A person of interest. You will receive his private knowledge and secrets."
+    },
+    {
+      "id": "gideon",
+      "role": "suspect",
+      "title": "Gideon Ashby \u2014 Board Chairman",
+      "characterId": "gideon",
+      "required": true,
+      "blurb": "A person of interest. You will receive his private knowledge and secrets."
+    },
+    {
+      "id": "nell",
+      "role": "witness",
+      "title": "Nell Okafor \u2014 Night Security",
+      "characterId": "nell",
+      "required": true,
+      "blurb": "Found the body. Knows the building, and has something to hide about her own evening."
+    },
+    {
+      "id": "ivo",
+      "role": "witness",
+      "title": "Ivo Brandt \u2014 Caterer",
+      "characterId": "ivo",
+      "required": true,
+      "blurb": "Worked the service corridor all night. Saw more than he wants to admit."
+    },
+    {
+      "id": "juror1",
+      "role": "juror",
+      "title": "Juror No. 1 (Foreperson)",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    },
+    {
+      "id": "juror2",
+      "role": "juror",
+      "title": "Juror No. 2",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    },
+    {
+      "id": "juror3",
+      "role": "juror",
+      "title": "Juror No. 3",
+      "required": true,
+      "blurb": "Hears the trial and decides on the admitted record alone."
+    }
+  ],
+  "procedure": {
+    "investigationHours": 20,
+    "interviewExchanges": 5,
+    "maxWitnessesPerSide": 4,
+    "maxQuestionsDirect": 3,
+    "maxQuestionsCross": 3,
+    "juryRounds": 3,
+    "standard": "Guilt must be proved beyond reasonable doubt on the admitted record. Evidence that was suppressed or excluded, and testimony that was struck, must not be considered. A unanimous jury is required to convict or acquit."
+  },
+  "crimeScene": {
+    "kind": "observatory",
+    "label": "Main Dome, Meridian Observatory"
+  },
+  "estimatedMinutes": 25,
+  "topicLabels": {
+    "voss.report": "what Voss intended to tell the board",
+    "mara.whereabouts": "where Dr. Quill was at the time",
+    "mara.shawl": "Dr. Quill's burgundy shawl",
+    "theo.whereabouts": "when Theo Lark actually left",
+    "theo.data": "what Theo Lark was doing in the control room",
+    "gideon.whereabouts": "Gideon Ashby's movements that night",
+    "gideon.threat": "the message Ashby sent Voss",
+    "theo.funding": "the quarrel over Theo Lark's funding",
+    "dome.voices": "the voices heard in the dome",
+    "nell.attention": "how the security log was kept",
+    "mara.camera": "who switched off the dome corridor camera",
+    "override.cards": "who held the override keycards",
+    "dome.fall": "how Voss came to fall"
+  }
+}

@@ -211,7 +211,7 @@ function initiative(sim: Sim): Turn | null {
       if (sub.exam) {
         const x = sub.exam;
         if (x.stage === 'direct' && (x.done || x.asked >= P.maxQuestionsDirect)) { x.stage = 'cross'; x.asked = 0; x.done = false; narrate(sim, `Cross-examination of ${sim.nameOf(x.witness)}.`); }
-        if (x.stage === 'cross' && (x.done || x.asked >= P.maxQuestionsCross)) { narrate(sim, `${sim.nameOf(x.witness)} is excused.`); sub.exam = null; sim.scene('courtroom', trialRoom(sim)); return null; }
+        if (x.stage === 'cross' && (x.done || x.asked >= P.maxQuestionsCross)) { narrate(sim, `${sim.nameOf(x.witness)} is excused.`); sim.emit('stand', { data: { seat: null }, aud: ['trial'], ms: 0 }); sub.exam = null; sim.scene('courtroom', trialRoom(sim)); return null; }
         return { seat: x.stage === 'direct' ? x.by : sim.other(x.by), purpose: 'examine' };
       }
       if (t.rested[side]) {

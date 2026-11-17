@@ -158,8 +158,8 @@ export interface EvidenceView {
   id: string; title: string; type: string; description: string; source: string; collection: string;
   location: SceneId; discoveredAt?: string; status: EvidenceState['status']; warrantless?: boolean;
   custody: EvidenceState['custody']; relevantTo: string[]; relatedTo: string[]; topics: string[];
-  points: (Omit<Inference, 'strength'> & { strength: 'weak' | 'moderate' | 'strong' })[];
-  limitations: { id: string; ground: string; text: string }[];
+  points: (Omit<Inference, 'strength'> & { strength: 'weak' | 'moderate' | 'strong'; via?: string })[];
+  limitations: { id: string; ground: string; text: string; via?: string }[];
   analyses: { id: string; label: string; kind: string; status: 'available' | 'pending' | 'done'; report?: string; hours: number }[];
   challenges: { by: string; ground: string; phase: Phase }[];
   disclosedToDefense: boolean; visual: EvidenceDef['visual'];

@@ -21,7 +21,7 @@ registerApi(app);
 
 const dist = path.join(config.root, 'dist');
 if (fs.existsSync(dist)) {
-  await app.register(fstatic, { root: dist, wildcard: false });
+  await app.register(fstatic, { root: dist });
   app.setNotFoundHandler((req, reply) => (req.url.startsWith('/api/') ? reply.code(404).send({ error: 'Not found.' }) : reply.sendFile('index.html')));
 }
 
